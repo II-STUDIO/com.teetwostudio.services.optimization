@@ -1,0 +1,22 @@
+{
+    "name": "com.teetwostudio.services.opimization",
+    "version": "0.0.1",
+    "unityRelease": "11f1",
+    "displayName": "TEE II Studio Services opimization",
+    "description": "This help your optimize the game.",
+    "keywords": [
+      "optimize",
+      "Services"
+    ],
+    "category": "Utility",
+    "unity": "2021.3",
+    "author": {
+      "name": "TEE II studio",
+      "email": "watchaphon40225@gmail.com"
+    },
+    "repository": {
+      "url": "https://github.com/Watchaphon/com.teetwostudio.services.optimization.git",
+      "type": "git",
+      "revision": "6b783c5dfb5a72d73e2b0a70d1caf4a367c58805"
+    }
+}
