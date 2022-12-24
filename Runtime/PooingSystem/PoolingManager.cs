@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Services.Optimization.PoolingSystem
@@ -12,20 +13,38 @@ namespace Services.Optimization.PoolingSystem
         /// Pooing cachse dictionay collection this use for collect pooling system for optimize staking same pooling.
         /// </summary>
         private static Dictionary<string, PoolingSystem> poolingRecycleDictionary = new Dictionary<string, PoolingSystem>();
-        /// <summary>
-        /// All pooling object has been arive or created.
-        /// </summary>
-        public static List<PoolingObject> GlobalPoolingObjects { get; private set; } = new List<PoolingObject>();
+
         /// <summary>
         /// Pooling object has been arive and active or enabled.
         /// </summary>
-        public static List<PoolingObject> ActivatePoolingObjects { get; private set; } = new List<PoolingObject>(1000);
+        public static NativeList<int> ActivatePoolingObjects { get; private set; } = new NativeList<int>(1000, AllocatorManager.TempJob);
+
+        /// <summary>
+        /// Pooling object that create into the world.
+        /// </summary>
+        public static Dictionary<int, PoolingObject> GlobalPoolingObjects { get; private set; } = new Dictionary<int, PoolingObject>();
 
         public static int ActivatedPoolingObjectCount { get; private set; } = 0;
+        public static int GlobalPoolingObjectCount { get; private set; } = 0;
+
 
         private static PoolingSystem poolingSystem_Ref;
         private static PoolingObject poolingObject_Ref;
         private static GameObject gameObject_Ref;
+
+        public static void AssignGlobalPoolingObject(PoolingObject poolingObject)
+        {
+            poolingObject.index = GlobalPoolingObjectCount;
+
+            GlobalPoolingObjects.Add(poolingObject.index, poolingObject);
+            GlobalPoolingObjectCount++;
+        }
+
+        public static void UnAssigneGlobalPoolingObject(PoolingObject poolingObject)
+        {
+            GlobalPoolingObjects.Remove(poolingObject.index);
+            GlobalPoolingObjectCount--;
+        }
 
         /// <summary>
         /// Assign pooling object to active pooling object for make system base handle.
@@ -34,7 +53,7 @@ namespace Services.Optimization.PoolingSystem
         /// <returns>Arive index</returns>
         public static void AssignActivatePoolingObject(PoolingObject poolingObject)
         {
-            ActivatePoolingObjects.Add(poolingObject);
+            ActivatePoolingObjects.Add(poolingObject.index);
             ActivatedPoolingObjectCount++;
         }
 
@@ -44,8 +63,15 @@ namespace Services.Optimization.PoolingSystem
         /// <param name="index"></param>
         public static void UnAssignActivatePoolingObject(PoolingObject poolingObject)
         {
-            ActivatePoolingObjects.Remove(poolingObject);
-            ActivatedPoolingObjectCount--;
+            for(int i = 0; i < ActivatedPoolingObjectCount; i++)
+            {
+                if(ActivatePoolingObjects[i] == poolingObject.index)
+                {
+                    ActivatePoolingObjects.RemoveAt(i);
+                    ActivatedPoolingObjectCount--;
+                    return;
+                }
+            }
         }
 
         public static PoolingObject PoolObject(string prefabID)

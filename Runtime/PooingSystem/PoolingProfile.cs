@@ -7,11 +7,11 @@ namespace Services.Optimization.PoolingSystem
     {
         [SerializeField] private string _customID;
         [SerializeField] private int _amount = 1;
-        [SerializeField] private GameObject _prefab;
+        [SerializeField] private PoolingObject _prefab;
 
         public float lifeTime = 1.5f;
 
-        public GameObject Prefab
+        public PoolingObject Prefab
         {
             get => _prefab;
         }

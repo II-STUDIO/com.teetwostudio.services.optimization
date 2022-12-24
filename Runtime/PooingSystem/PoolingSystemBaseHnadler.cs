@@ -59,7 +59,7 @@ namespace Services.Optimization.PoolingSystem {
 
             for(int i = 0; i < PoolingManager.ActivatedPoolingObjectCount; i++)
             {
-                _poolingObjectRef = PoolingManager.ActivatePoolingObjects[i];
+                _poolingObjectRef = PoolingManager.GlobalPoolingObjects[PoolingManager.ActivatePoolingObjects[i]];
 
                 if (_poolingObjectRef == null)
                     continue;
@@ -68,6 +68,8 @@ namespace Services.Optimization.PoolingSystem {
                     continue;
 
                 _poolingObjectRef.lifeTimerCountDown -= _deltaTime;
+                _poolingObjectRef.OnUpdate(_deltaTime);
+
                 if (_poolingObjectRef.lifeTimerCountDown > 0f)
                     continue;
 

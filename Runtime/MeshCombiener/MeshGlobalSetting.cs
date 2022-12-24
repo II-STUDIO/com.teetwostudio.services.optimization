@@ -3,34 +3,37 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class MeshGlobalSetting : MonoBehaviour
+namespace Services.Optimization
 {
-    [Header("Shadow")]
-    public ShadowCastingMode castShadow = ShadowCastingMode.On;
-    [Header("Probe")]
-    public LightProbeUsage lightProbe = LightProbeUsage.BlendProbes;
-    public ReflectionProbeUsage reflectionProbe = ReflectionProbeUsage.BlendProbes;
-    public Transform archorOverride;
-    [Header("Addition Setting")]
-    public bool dynamicOcclusion = true;
-
-    [ContextMenu("ApplyToMeshRenderer")]
-    public void MeshRendererFillter()
+    public class MeshGlobalSetting : MonoBehaviour
     {
-        MeshRenderer[] renderer = FindObjectsOfType<MeshRenderer>();
+        [Header("Shadow")]
+        public ShadowCastingMode castShadow = ShadowCastingMode.On;
+        [Header("Probe")]
+        public LightProbeUsage lightProbe = LightProbeUsage.BlendProbes;
+        public ReflectionProbeUsage reflectionProbe = ReflectionProbeUsage.BlendProbes;
+        public Transform archorOverride;
+        [Header("Addition Setting")]
+        public bool dynamicOcclusion = true;
 
-        Apply(renderer);
-    }
-
-    public void Apply(Renderer[] renderers)
-    {
-        foreach(Renderer target in renderers)
+        [ContextMenu("ApplyToMeshRenderer")]
+        public void MeshRendererFillter()
         {
-            target.shadowCastingMode = castShadow;
-            target.lightProbeUsage = lightProbe;
-            target.reflectionProbeUsage = reflectionProbe;
-            target.probeAnchor = archorOverride;
-            target.allowOcclusionWhenDynamic = dynamicOcclusion;
+            MeshRenderer[] renderer = FindObjectsOfType<MeshRenderer>();
+
+            Apply(renderer);
+        }
+
+        public void Apply(Renderer[] renderers)
+        {
+            foreach (Renderer target in renderers)
+            {
+                target.shadowCastingMode = castShadow;
+                target.lightProbeUsage = lightProbe;
+                target.reflectionProbeUsage = reflectionProbe;
+                target.probeAnchor = archorOverride;
+                target.allowOcclusionWhenDynamic = dynamicOcclusion;
+            }
         }
     }
 }

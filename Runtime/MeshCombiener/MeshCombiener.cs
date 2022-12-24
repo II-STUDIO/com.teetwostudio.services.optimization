@@ -1,36 +1,37 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-[RequireComponent(typeof(MeshFilter))]
-[RequireComponent(typeof(MeshRenderer))]
-public class MeshCombiener : MonoBehaviour
+namespace Services.Optimization
 {
-    [SerializeField] MeshFilter outputMesh;
-    [SerializeField] MeshFilter[] meshFilters;
-
-    [ContextMenu("Setup")]
-    void Setup()
+    [RequireComponent(typeof(MeshFilter))]
+    [RequireComponent(typeof(MeshRenderer))]
+    public class MeshCombiener : MonoBehaviour
     {
-        outputMesh = GetComponent<MeshFilter>();
-        meshFilters = GetComponentsInChildren<MeshFilter>();
-    }
+        [SerializeField] MeshFilter outputMesh;
+        [SerializeField] MeshFilter[] meshFilters;
 
-    void Start()
-    {
-        CombineInstance[] combine = new CombineInstance[meshFilters.Length];
-
-        int i = 0;
-        while (i < meshFilters.Length)
+        [ContextMenu("Setup")]
+        void Setup()
         {
-            combine[i].mesh = meshFilters[i].sharedMesh;
-            combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
-            meshFilters[i].gameObject.SetActive(false);
-
-            i++;
+            outputMesh = GetComponent<MeshFilter>();
+            meshFilters = GetComponentsInChildren<MeshFilter>();
         }
-        outputMesh.mesh = new Mesh();
-        outputMesh.mesh.CombineMeshes(combine);
-        transform.gameObject.SetActive(true);
+
+        void Start()
+        {
+            CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+
+            int i = 0;
+            while (i < meshFilters.Length)
+            {
+                combine[i].mesh = meshFilters[i].sharedMesh;
+                combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+                meshFilters[i].gameObject.SetActive(false);
+
+                i++;
+            }
+            outputMesh.mesh = new Mesh();
+            outputMesh.mesh.CombineMeshes(combine);
+            transform.gameObject.SetActive(true);
+        }
     }
 }

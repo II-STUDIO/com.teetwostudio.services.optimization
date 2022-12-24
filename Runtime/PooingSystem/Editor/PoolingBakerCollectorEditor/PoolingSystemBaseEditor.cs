@@ -136,10 +136,10 @@ namespace Services.Optimization.PoolingSystem.ScriptEditor
 
                 creater.profile = (PoolingProfile)EditorGUILayout.ObjectField("Profile", creater.profile, typeof(PoolingProfile), true);
 
-                if (creater.profile.Prefab && PoolingEditorCache.objectPreview == ObjectPreview.On)
+                if (creater.profile && creater.profile.Prefab && PoolingEditorCache.objectPreview == ObjectPreview.On)
                 {
                     EditorAssitance.HorizontalLine();
-                    EditorAssitance.DrawPrefviewObject(creater.profile.Prefab, 80);
+                    EditorAssitance.DrawPrefviewObject(creater.profile.Prefab.gameObject, 80);
                 }
 
                 if(isConfix)

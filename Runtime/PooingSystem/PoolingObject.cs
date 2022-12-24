@@ -7,16 +7,20 @@ namespace Services.Optimization.PoolingSystem
     /// <summary>
     /// Pooling object controllable of prefab for poolable.
     /// </summary>
-    public class PoolingObject
+    public class PoolingObject : MonoBehaviour
     {
         private PoolingProfile _profile;
         private Transform _originalPerent;
 
+        [HideInInspector] public float lifeTimerCountDown = 0f;
+
         /// <summary>
         /// The fasted for access this transform of this pooling object.
         /// </summary>
-        public Transform transform { get; private set; }
-        public GameObject gameObject { get; private set; }
+        public Transform transformCache { get; private set; }
+        public GameObject gameObjectCache { get; private set; }
+
+        public int index { get; set; }
 
         public string ID { get; private set; }
         public bool IsActive { get; private set; } = false;
@@ -29,37 +33,36 @@ namespace Services.Optimization.PoolingSystem
         /// <param name="time"></param>
         public void SetLifeTimeCountDown(float time) => lifeTimerCountDown = time;
 
-        public PoolingObject(GameObject referenceObject, PoolingProfile profile, string id)
+        /// <summary>
+        /// This invoke one time when this object is init on 'PoolingSystem'.
+        /// </summary>
+        public virtual void Initialize(PoolingProfile profile, string id) 
         {
             _profile = profile;
 
             ID = id;
 
-            Initialize(referenceObject);
+            gameObjectCache = gameObject;
+            transformCache = gameObjectCache.transform;
+
+            PoolingManager.AssignGlobalPoolingObject(this);
         }
 
         /// <summary>
-        /// This invoke one time when this object is init on 'PoolingSystem'.
+        /// Invoke every frame like 'Update' of unity mono behaviour
         /// </summary>
-        protected virtual void Initialize(GameObject referenceObject) 
+        /// <param name="deltaTime"></param>
+        public void OnUpdate(float deltaTime)
         {
-            gameObject = referenceObject;
-            transform = referenceObject.transform;
 
-            PoolingManager.GlobalPoolingObjects.Add(this);
         }
-
-        /// <summary>
-        /// Life count down of this object.
-        /// </summary>
-        [HideInInspector] public float lifeTimerCountDown = 0f;
 
         /// <summary>
         /// Make object enabled.
         /// </summary>
         public void Enabled()
         {
-            gameObject.SetActive(true);
+            gameObjectCache.SetActive(true);
 
             IsActive = true;
             lifeTimerCountDown = _profile.lifeTime;
@@ -75,17 +78,17 @@ namespace Services.Optimization.PoolingSystem
         /// </summary>
         public void Disabled()
         {
-            if (!gameObject.activeSelf) 
+            if (!gameObjectCache.activeSelf) 
                 return;
 
-            gameObject.SetActive(false);
+            gameObjectCache.SetActive(false);
 
             IsActive = false;
             lifeTimerCountDown = 0f;
-            transform.localPosition = Vector3.zero;
+            transformCache.localPosition = Vector3.zero;
 
-            if (transform.parent != _originalPerent)
-                transform.SetParent(_originalPerent);
+            if (transformCache.parent != _originalPerent)
+                transformCache.SetParent(_originalPerent);
 
             if (_profile.lifeTime > 0f)
                 PoolingManager.UnAssignActivatePoolingObject(this);
@@ -111,7 +114,7 @@ namespace Services.Optimization.PoolingSystem
 
         protected virtual void OnDestroy()
         {
-            PoolingManager.GlobalPoolingObjects.Remove(this);
+            PoolingManager.UnAssigneGlobalPoolingObject(this);
         }
     }
 }

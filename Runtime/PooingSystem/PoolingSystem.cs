@@ -10,7 +10,6 @@ namespace Services.Optimization.PoolingSystem
     {
         private List<PoolingObject> objectPoolings = new List<PoolingObject>();
 
-        private GameObject object_Ref;
         private PoolingObject objjectPool_Ref;
 
         private PoolingProfile profile;
@@ -55,8 +54,15 @@ namespace Services.Optimization.PoolingSystem
 
         private void AddNew()
         {
-            object_Ref = Object.Instantiate(profile.Prefab, originalPerent);
-            objjectPool_Ref = new PoolingObject(object_Ref, profile, profileID);
+            if(profile.Prefab == null)
+            {
+                Debug.LogErrorFormat("Prefab of Pooling profile can't be null or emty");
+                return;
+            }
+
+            objjectPool_Ref = Object.Instantiate(profile.Prefab, originalPerent);
+
+            objjectPool_Ref.Initialize(profile, profileID);
 
             if (!objjectPool_Ref.gameObject) 
             { 

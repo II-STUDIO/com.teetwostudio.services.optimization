@@ -24,10 +24,10 @@ namespace Services.Optimization.PoolingSystem
             if (source == CreateSource.LoadPath)
                 LoadPath(createrDictionary);
 
-            Init(createrDictionary, container);
+            StartCreate(createrDictionary, container);
         }
 
-        private void Init(Dictionary<string, PoolingCreater> createrDictionary, Transform container)
+        private void StartCreate(Dictionary<string, PoolingCreater> createrDictionary, Transform container)
         {
             for(int i = 0;i< poolingCreaters.Count; i++)
             {

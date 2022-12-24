@@ -4,6 +4,9 @@
     "unityRelease": "11f1",
     "displayName": "TEE II Studio Services opimization",
     "description": "This help your optimize the game.",
+    "dependencies": {
+      "com.unity.collections": "1.2.4"
+    },
     "keywords": [
       "optimize",
       "Services"
