@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Services.Optimization.PoolingSystem
 {
     [CreateAssetMenu(fileName = "PoolingProfile", menuName = "Optimization/PoolingProfile")]
-    public class PoolingProfile : ScriptableObject
+    public class PoolProfile : ScriptableObject
     {
         [SerializeField] private string _customID;
         [SerializeField] private int _amount = 1;

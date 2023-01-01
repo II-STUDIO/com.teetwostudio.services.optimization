@@ -6,43 +6,43 @@ using UnityEditor.AnimatedValues;
 
 namespace Services.Optimization.PoolingSystem.ScriptEditor
 {
-    [CustomEditor(typeof(PoolingSystemBaseHnadler))]
-    public class PoolingSystemBaseEditor : Editor
+    [CustomEditor(typeof(PoolSystemBaseHnadler))]
+    public class PoolSystemBaseEditor : Editor
     {
-        PoolingSystemBaseHnadler _systemBaseHandler;
+        PoolSystemBaseHnadler _systemBaseHandler;
         Dictionary<int, AnimBool> _animBools = new Dictionary<int, AnimBool>();
 
         float _miniBtn = 30f;
 
         public override void OnInspectorGUI()
         {
-            _systemBaseHandler = target as PoolingSystemBaseHnadler;
+            _systemBaseHandler = target as PoolSystemBaseHnadler;
             if (!_systemBaseHandler) return;
 
-             EditorAssitance.VerticalGroup(EditorGUIKey.GroupBox, () =>
+             EditorView.VerticalGroup(EditorKey.GroupBox, () =>
              {
-                 PoolingEditorCache.objectPreview = (ObjectPreview)EditorGUILayout.EnumPopup("Preview Object",PoolingEditorCache.objectPreview);
+                 PoolEditorCache.objectPreview = (ObjectPreview)EditorGUILayout.EnumPopup("Preview Object",PoolEditorCache.objectPreview);
                  EditorGUILayout.PropertyField(serializedObject.FindProperty("_initMethod"));
                  EditorGUILayout.PropertyField(serializedObject.FindProperty("_container"));
              });
 
             //Check Confix
-            EditorAssitance.VerticalGroup(EditorGUIKey.GroupBox, () =>
+            EditorView.VerticalGroup(EditorKey.GroupBox, () =>
             {
-                int count = _systemBaseHandler.BakerLayers.Count;
+                int count = _systemBaseHandler.CreateLayers.Count;
                 for (int i = 0; i < count; i++)
                 {
                     if (!_animBools.ContainsKey(i)) _animBools.Add(i, new AnimBool());
                     DrawLayerItem(i);
                 }
 
-                EditorAssitance.HorizontalLine();
+                EditorView.HorizontalLine();
 
                 if (GUILayout.Button("New Layer"))
                 {
                     CreateLayer newLayer = new CreateLayer();
                     newLayer.SetupValue();
-                    _systemBaseHandler.BakerLayers.Add(newLayer);
+                    _systemBaseHandler.CreateLayers.Add(newLayer);
                 }
             });
 
@@ -56,18 +56,18 @@ namespace Services.Optimization.PoolingSystem.ScriptEditor
 
         void DrawLayerItem(int index)
         {
-            if (index > _systemBaseHandler.BakerLayers.Count - 1) 
+            if (index > _systemBaseHandler.CreateLayers.Count - 1) 
                 return;
 
-            var layer = _systemBaseHandler.BakerLayers[index];
+            var layer = _systemBaseHandler.CreateLayers[index];
             bool isContineus = true;
 
-            EditorAssitance.FoldoutGroup(_animBools[index], layer.layerName, () =>
+            EditorView.FoldoutGroup(_animBools[index], layer.layerName, () =>
             {
                 if (!isContineus)
                     return;
 
-                EditorAssitance.VerticalGroup(EditorGUIKey.GroupBox, () =>
+                EditorView.VerticalGroup(EditorKey.GroupBox, () =>
                 {
                     layer.layerName = EditorGUILayout.TextField("Layer Name", layer.layerName);
                     layer.source = (CreateSource)EditorGUILayout.EnumPopup("Soruce Loader", layer.source);
@@ -79,17 +79,17 @@ namespace Services.Optimization.PoolingSystem.ScriptEditor
                             DrawItem(index, i);
                         }
 
-                        EditorAssitance.HorizontalLine();
+                        EditorView.HorizontalLine();
 
                         if (GUILayout.Button("+"))
                         {
-                            layer.poolingCreaters.Add(new PoolingCreater());
+                            layer.poolingCreaters.Add(new PoolerCreater());
                         }
 
                     }
                     else if(layer.source == CreateSource.LoadPath)
                     {
-                        EditorAssitance.VerticalGroup(EditorGUIKey.GroupBox, () =>
+                        EditorView.VerticalGroup(EditorKey.GroupBox, () =>
                         {
                             layer.sourcePath = EditorGUILayout.TextField("Assets Path", layer.sourcePath);
                         });
@@ -97,13 +97,13 @@ namespace Services.Optimization.PoolingSystem.ScriptEditor
 
                 });
 
-                _systemBaseHandler.BakerLayers[index] = layer;
+                _systemBaseHandler.CreateLayers[index] = layer;
 
             }, () => 
             { 
                 if(GUILayout.Button("X", GUILayout.Width(_miniBtn)))
                 {
-                    _systemBaseHandler.BakerLayers.RemoveAt(index);
+                    _systemBaseHandler.CreateLayers.RemoveAt(index);
                     isContineus = false;
                 }
             });
@@ -111,16 +111,16 @@ namespace Services.Optimization.PoolingSystem.ScriptEditor
 
         void DrawItem(int layerIndex, int createrIndex)
         {
-            var layer = _systemBaseHandler.BakerLayers[layerIndex];
+            var layer = _systemBaseHandler.CreateLayers[layerIndex];
             var creater = layer.poolingCreaters[createrIndex];
             var id = creater.profile ? creater.profile.ID : "Profile is null";
 
-            var isConfix = !PoolingEditorCache.AddObjectCacheSucces(creater.profile);
+            var isConfix = !PoolEditorCache.AddObjectCacheSucces(creater.profile);
             bool isContinues = true;
 
-            EditorAssitance.VerticalGroup(EditorGUIKey.GroupBox, () =>
+            EditorView.VerticalGroup(EditorKey.GroupBox, () =>
             {
-                EditorAssitance.HorizontalGroup(GUI.skin.box, () =>
+                EditorView.HorizontalGroup(GUI.skin.box, () =>
                 {
                     EditorGUILayout.LabelField("ID : " + id);
                     if (GUILayout.Button("-",GUILayout.Width(_miniBtn)))
@@ -134,19 +134,19 @@ namespace Services.Optimization.PoolingSystem.ScriptEditor
                 if (!isContinues)
                     return;
 
-                creater.profile = (PoolingProfile)EditorGUILayout.ObjectField("Profile", creater.profile, typeof(PoolingProfile), true);
+                creater.profile = (PoolProfile)EditorGUILayout.ObjectField("Profile", creater.profile, typeof(PoolProfile), true);
 
-                if (creater.profile && creater.profile.Prefab && PoolingEditorCache.objectPreview == ObjectPreview.On)
+                if (creater.profile && creater.profile.Prefab && PoolEditorCache.objectPreview == ObjectPreview.On)
                 {
-                    EditorAssitance.HorizontalLine();
-                    EditorAssitance.DrawPrefviewObject(creater.profile.Prefab.gameObject, 80);
+                    EditorView.HorizontalLine();
+                    EditorView.DrawPrefviewObject(creater.profile.Prefab.gameObject, 80);
                 }
 
                 if(isConfix)
                     EditorGUILayout.HelpBox("ID of this profile are same with other profile id please check profiles id", MessageType.Error);
 
                 layer.poolingCreaters[createrIndex] = creater;
-                _systemBaseHandler.BakerLayers[layerIndex] = layer;
+                _systemBaseHandler.CreateLayers[layerIndex] = layer;
             });
         }
     }

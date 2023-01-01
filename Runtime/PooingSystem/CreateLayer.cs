@@ -9,17 +9,17 @@ namespace Services.Optimization.PoolingSystem
         public string layerName;
         public string sourcePath;
         public CreateSource source;
-        public List<PoolingCreater> poolingCreaters;
+        public List<PoolerCreater> poolingCreaters;
 
         public void SetupValue()
         {
             layerName = "Untitled";
             sourcePath = "";
             source = CreateSource.Defualt;
-            poolingCreaters = new List<PoolingCreater>();
+            poolingCreaters = new List<PoolerCreater>();
         }
 
-        public void Initialize(Dictionary<string, PoolingCreater> createrDictionary, Transform container)
+        public void Initialize(Dictionary<string, PoolerCreater> createrDictionary, Transform container)
         {
             if (source == CreateSource.LoadPath)
                 LoadPath(createrDictionary);
@@ -27,11 +27,11 @@ namespace Services.Optimization.PoolingSystem
             StartCreate(createrDictionary, container);
         }
 
-        private void StartCreate(Dictionary<string, PoolingCreater> createrDictionary, Transform container)
+        private void StartCreate(Dictionary<string, PoolerCreater> createrDictionary, Transform container)
         {
             for(int i = 0;i< poolingCreaters.Count; i++)
             {
-                PoolingCreater creater = poolingCreaters[i];
+                PoolerCreater creater = poolingCreaters[i];
 
                 if (createrDictionary.ContainsKey(creater.profile.GetInstanceID().ToString()))
                 {
@@ -39,7 +39,7 @@ namespace Services.Optimization.PoolingSystem
                 }
                 else
                 {
-                    creater.poolingSystem = PoolingManager.CreatePoolingSystem(creater.profile, creater.profile.Amount);
+                    creater.poolingSystem = PoolManager.CreatePooler<PoolingObject>(creater.profile);
                     if (container) creater.poolingSystem.root.SetParent(container);
 
                     createrDictionary.Add(creater.profile.ID, creater);
@@ -49,11 +49,11 @@ namespace Services.Optimization.PoolingSystem
             }
         }
 
-        private void LoadPath(Dictionary<string, PoolingCreater> createrDictionary)
+        private void LoadPath(Dictionary<string, PoolerCreater> createrDictionary)
         {
             poolingCreaters.Clear();
 
-            var assetProfiles = Resources.LoadAll<PoolingProfile>(sourcePath);
+            var assetProfiles = Resources.LoadAll<PoolProfile>(sourcePath);
             var assetCount = assetProfiles.Length;
             for(int i = 0; i < assetCount; i++)
             {
@@ -62,7 +62,7 @@ namespace Services.Optimization.PoolingSystem
                 if (!profile)
                     continue;
 
-                PoolingCreater baker = new PoolingCreater();
+                PoolerCreater baker = new PoolerCreater();
                 baker.nameOfIndex = profile.ID;
                 baker.profile = profile;
 

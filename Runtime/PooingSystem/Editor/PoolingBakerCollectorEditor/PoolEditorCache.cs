@@ -5,12 +5,12 @@ using UnityEditor;
 namespace Services.Optimization.PoolingSystem.ScriptEditor
 {
     public enum ObjectPreview { Off,On }
-    public static class PoolingEditorCache
+    public static class PoolEditorCache
     {
         public static ObjectPreview objectPreview;
-        static Dictionary<string, PoolingProfile> objectsCacheDict = new Dictionary<string, PoolingProfile>();
+        private static Dictionary<string, PoolProfile> objectsCacheDict = new Dictionary<string, PoolProfile>();
 
-        public static bool AddObjectCacheSucces(PoolingProfile profile)
+        public static bool AddObjectCacheSucces(PoolProfile profile)
         {
             if (!profile) 
                 return true;

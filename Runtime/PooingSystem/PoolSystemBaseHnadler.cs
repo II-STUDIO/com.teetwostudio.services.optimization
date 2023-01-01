@@ -6,21 +6,22 @@ namespace Services.Optimization.PoolingSystem {
     /// <summary>
     /// This class is installer of customize pooling object;
     /// </summary>
-    public class PoolingSystemBaseHnadler : MonoBehaviour
+    public class PoolSystemBaseHnadler : MonoBehaviour
     {
         [SerializeField] private InitMethod _initMethod;
+        [SerializeField] private int maxCapacity = 600;
         [SerializeField] private Transform _container;
-        [SerializeField] private List<CreateLayer> _bakerLayers = new List<CreateLayer>();
+        [SerializeField] private List<CreateLayer> _createLayers = new List<CreateLayer>();
 
-        private Dictionary<string, PoolingCreater> _createrDictionary = new Dictionary<string, PoolingCreater>();
+        private Dictionary<string, PoolerCreater> _createrDictionary = new Dictionary<string, PoolerCreater>();
         private PoolingObject _poolingObjectRef;
 
         private float _deltaTime;
 
-        public List<CreateLayer> BakerLayers 
+        public List<CreateLayer> CreateLayers 
         { 
-            get => _bakerLayers; 
-            set => _bakerLayers = value; 
+            get => _createLayers; 
+            set => _createLayers = value; 
         }
 
         /// <summary>
@@ -30,21 +31,30 @@ namespace Services.Optimization.PoolingSystem {
 
         private void Awake()
         {
-            if (_initMethod != InitMethod.Awake) return;
+            PoolManager.SystemBaseHnadler = this;
+
+            if (_initMethod != InitMethod.Awake) 
+                return;
+
             Initialize();
         }
 
         private void Start()
         {
-            if (_initMethod != InitMethod.Start) return;
-            if (Initialized) return;
+            if (_initMethod != InitMethod.Start) 
+                return;
+
+            if (Initialized) 
+                return;
+
             Initialize();
         }
 
         void Initialize()
         {
             _createrDictionary.Clear();
-            foreach (CreateLayer baker in _bakerLayers)
+
+            foreach (CreateLayer baker in _createLayers)
                 baker.Initialize(_createrDictionary, _container);
 
             Initialized = true;
@@ -52,14 +62,14 @@ namespace Services.Optimization.PoolingSystem {
 
         private void Update()
         {
-            if (PoolingManager.ActivatedPoolingObjectCount == 0)
+            if (PoolManager.ActivatedPoolingObjectCount == 0)
                 return;
 
             _deltaTime = Time.deltaTime;
 
-            for(int i = 0; i < PoolingManager.ActivatedPoolingObjectCount; i++)
+            for(int i = 0; i < PoolManager.ActivatedPoolingObjectCount; i++)
             {
-                _poolingObjectRef = PoolingManager.GlobalPoolingObjects[PoolingManager.ActivatePoolingObjects[i]];
+                _poolingObjectRef = PoolManager.GlobalPoolingObjects[PoolManager.ActivatePoolingObjects[i]];
 
                 if (_poolingObjectRef == null)
                     continue;

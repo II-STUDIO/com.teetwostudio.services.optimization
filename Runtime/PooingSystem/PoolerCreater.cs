@@ -6,10 +6,10 @@ namespace Services.Optimization.PoolingSystem
     /// This class use for contain prefab to create PoolingSystem
     /// </summary>
     [Serializable]
-    public struct PoolingCreater
+    public struct PoolerCreater
     {
         public string nameOfIndex;
-        public PoolingProfile profile;
-        public PoolingSystem poolingSystem;
+        public PoolProfile profile;
+        public ObjectPooler<PoolingObject> poolingSystem;
     }
 }

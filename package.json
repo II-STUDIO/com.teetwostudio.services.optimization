@@ -3,9 +3,10 @@
     "version": "0.0.1",
     "unityRelease": "11f1",
     "displayName": "TEE II Studio Services opimization",
-    "description": "This help your optimize the game.",
+    "description": "This help your optimize with hight performace code.",
     "dependencies": {
-      "com.unity.collections": "1.2.4"
+      "com.unity.collections": "1.2.4",
+      "com.teetwostudio.services.utility": "0.0.1"
     },
     "keywords": [
       "optimize",

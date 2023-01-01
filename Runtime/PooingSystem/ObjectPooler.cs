@@ -6,13 +6,13 @@ namespace Services.Optimization.PoolingSystem
     /// <summary>
     /// Pooling system for target of initialized prefab object.
     /// </summary>
-    public class PoolingSystem
+    public class ObjectPooler<TPoolingObject> where TPoolingObject : PoolingObject
     {
-        private List<PoolingObject> objectPoolings = new List<PoolingObject>();
+        private List<TPoolingObject> objectPoolings = new List<TPoolingObject>(600);
 
-        private PoolingObject objjectPool_Ref;
+        private TPoolingObject objjectPool_Ref;
 
-        private PoolingProfile profile;
+        private PoolProfile profile;
         private Transform originalPerent;
 
         private string profileID;
@@ -29,7 +29,7 @@ namespace Services.Optimization.PoolingSystem
         /// </summary>
         /// <param name="profile"></param>
         /// <param name="amount"></param>
-        public void Initialize(PoolingProfile profile, int amount, Transform parent)
+        public void Initialize(PoolProfile profile, int amount, Transform parent)
         {
             this.profile = profile;
 
@@ -60,7 +60,7 @@ namespace Services.Optimization.PoolingSystem
                 return;
             }
 
-            objjectPool_Ref = Object.Instantiate(profile.Prefab, originalPerent);
+            objjectPool_Ref = (TPoolingObject)Object.Instantiate(profile.Prefab, originalPerent);
 
             objjectPool_Ref.Initialize(profile, profileID);
 
@@ -81,7 +81,7 @@ namespace Services.Optimization.PoolingSystem
         /// <param name="poolPosition"></param>
         /// <param name="poolRotation"></param>
         /// <returns>Lasted object prefab index</returns>
-        public PoolingObject PoolObject(Vector3 poolPosition, Quaternion poolRotation)
+        public TPoolingObject Pool(Vector3 poolPosition, Quaternion poolRotation)
         {
             objjectPool_Ref = GetValidableObject();
 
@@ -95,12 +95,27 @@ namespace Services.Optimization.PoolingSystem
             return objjectPool_Ref;
         }
 
+        public TPoolingObject Pool(Vector3 poolPosition, Quaternion poolRotation, Transform parent)
+        {
+            objjectPool_Ref = GetValidableObject();
+
+            objjectPool_Ref.transform.position = poolPosition;
+            objjectPool_Ref.transform.rotation = poolRotation;
+            objjectPool_Ref.transform.localScale = profile.Prefab.transform.localScale;
+            objjectPool_Ref.transform.SetParent(parent);
+            objjectPool_Ref.Enabled();
+
+            SetNextIndex();
+
+            return objjectPool_Ref;
+        }
+
         /// <summary>
         /// Call for pool object prefab out width set parent and enabled.
         /// </summary>
         /// <param name="parent"></param>
         /// <returns>Lasted object prefab index</returns>
-        public PoolingObject PoolObject(Transform parent)
+        public TPoolingObject Pool(Transform parent)
         {
             objjectPool_Ref = GetValidableObject();
 
@@ -117,7 +132,7 @@ namespace Services.Optimization.PoolingSystem
         /// </summary>
         /// <param name="parent"></param>
         /// <returns>Lasted object prefab index</returns>
-        public PoolingObject PoolObject()
+        public TPoolingObject Pool()
         {
             objjectPool_Ref = GetValidableObject();
 
@@ -132,7 +147,7 @@ namespace Services.Optimization.PoolingSystem
         /// Calculate validabe prefab to pool.
         /// </summary>
         /// <returns></returns>
-        private PoolingObject GetValidableObject()
+        private TPoolingObject GetValidableObject()
         {
             objjectPool_Ref = objectPoolings[currentPooilingIndex];
 
@@ -159,7 +174,7 @@ namespace Services.Optimization.PoolingSystem
 
         public void Dispose()
         {
-            PoolingManager.RemoveFormRecycleDictionary(profileID);
+            PoolManager.RemoveFormRecycleDictionary(profileID);
         }
 
         public void DisabledAll()

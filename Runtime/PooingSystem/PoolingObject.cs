@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Services.Optimization.PoolingSystem
 {
@@ -9,7 +7,7 @@ namespace Services.Optimization.PoolingSystem
     /// </summary>
     public class PoolingObject : MonoBehaviour
     {
-        private PoolingProfile _profile;
+        private PoolProfile _profile;
         private Transform _originalPerent;
 
         [HideInInspector] public float lifeTimerCountDown = 0f;
@@ -20,39 +18,37 @@ namespace Services.Optimization.PoolingSystem
         public Transform transformCache { get; private set; }
         public GameObject gameObjectCache { get; private set; }
 
-        public int index { get; set; }
+        public int Index { get; set; }
 
+        /// <summary>
+        /// ID of the profile of this pooling Object.
+        /// </summary>
         public string ID { get; private set; }
         public bool IsActive { get; private set; } = false;
 
         public void SetOriginalPerent(Transform targetPerent) => _originalPerent = targetPerent;
 
-        /// <summary>
-        /// Set current life time of this missile.
-        /// </summary>
-        /// <param name="time"></param>
-        public void SetLifeTimeCountDown(float time) => lifeTimerCountDown = time;
 
         /// <summary>
         /// This invoke one time when this object is init on 'PoolingSystem'.
         /// </summary>
-        public virtual void Initialize(PoolingProfile profile, string id) 
+        public virtual void Initialize(PoolProfile profile, string profileId) 
         {
             _profile = profile;
 
-            ID = id;
+            ID = profileId;
 
             gameObjectCache = gameObject;
             transformCache = gameObjectCache.transform;
 
-            PoolingManager.AssignGlobalPoolingObject(this);
+            PoolManager.AssignGlobalPoolingObject(this);
         }
 
         /// <summary>
         /// Invoke every frame like 'Update' of unity mono behaviour
         /// </summary>
         /// <param name="deltaTime"></param>
-        public void OnUpdate(float deltaTime)
+        public virtual void OnUpdate(float deltaTime)
         {
 
         }
@@ -68,7 +64,7 @@ namespace Services.Optimization.PoolingSystem
             lifeTimerCountDown = _profile.lifeTime;
 
             if (_profile.lifeTime > 0f)
-                PoolingManager.AssignActivatePoolingObject(this);
+                PoolManager.AssignActivatePoolingObject(this);
 
             OnEnabled();
         }
@@ -91,7 +87,7 @@ namespace Services.Optimization.PoolingSystem
                 transformCache.SetParent(_originalPerent);
 
             if (_profile.lifeTime > 0f)
-                PoolingManager.UnAssignActivatePoolingObject(this);
+                PoolManager.UnAssignActivatePoolingObject(this);
 
             OnDisabled();
         }
@@ -114,7 +110,7 @@ namespace Services.Optimization.PoolingSystem
 
         protected virtual void OnDestroy()
         {
-            PoolingManager.UnAssigneGlobalPoolingObject(this);
+            PoolManager.UnAssigneGlobalPoolingObject(this);
         }
     }
 }
