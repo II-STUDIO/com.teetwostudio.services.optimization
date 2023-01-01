@@ -104,6 +104,12 @@ namespace Services.Optimization.PoolingSystem
         /// <returns>PoolingSystem Componet of created target prefab</returns>
         public static ObjectPooler<TPooingObject> CreatePooler<TPooingObject>(PoolProfile profile) where TPooingObject : PoolingObject
         {
+            if(SystemBaseHnadler == null)
+            {
+                Debug.LogErrorFormat("Please setup 'PoolSystemBaseHandler' on the scene");
+                return null;
+            }
+
             ObjectPooler<TPooingObject> pooler = TryCreate<TPooingObject>(profile, profile.Amount);
 
             if (pooler != null) 

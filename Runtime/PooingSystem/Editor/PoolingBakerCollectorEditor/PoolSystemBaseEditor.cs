@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.AnimatedValues;
+using Services.Utility;
 
 namespace Services.Optimization.PoolingSystem.ScriptEditor
 {
@@ -23,6 +24,7 @@ namespace Services.Optimization.PoolingSystem.ScriptEditor
              {
                  PoolEditorCache.objectPreview = (ObjectPreview)EditorGUILayout.EnumPopup("Preview Object",PoolEditorCache.objectPreview);
                  EditorGUILayout.PropertyField(serializedObject.FindProperty("_initMethod"));
+                 EditorGUILayout.PropertyField(serializedObject.FindProperty("_maxCapacity"));
                  EditorGUILayout.PropertyField(serializedObject.FindProperty("_container"));
              });
 

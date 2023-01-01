@@ -8,8 +8,9 @@ namespace Services.Optimization.PoolingSystem {
     /// </summary>
     public class PoolSystemBaseHnadler : MonoBehaviour
     {
-        [SerializeField] private InitMethod _initMethod;
-        [SerializeField] private int maxCapacity = 600;
+        [SerializeField] private bool _dontDestroyOnLoad = true;
+        [SerializeField] private InitMethod _initMethod = InitMethod.Awake;
+        [SerializeField] [Range(100, 900)] private int _maxCapacity = 600;
         [SerializeField] private Transform _container;
         [SerializeField] private List<CreateLayer> _createLayers = new List<CreateLayer>();
 
@@ -24,14 +25,26 @@ namespace Services.Optimization.PoolingSystem {
             set => _createLayers = value; 
         }
 
+        public int MaxCapacity
+        {
+            get => _maxCapacity;
+        }
+
         /// <summary>
         /// Return true if is initialzed.
         /// </summary>
-        public bool Initialized { get; private set; } = false;
+        public bool IsInitialized { get; private set; } = false;
+
 
         private void Awake()
         {
+            if (PoolManager.SystemBaseHnadler != null)
+                Destroy(PoolManager.SystemBaseHnadler.gameObject);
+
             PoolManager.SystemBaseHnadler = this;
+
+            if (_dontDestroyOnLoad)
+                DontDestroyOnLoad(gameObject);
 
             if (_initMethod != InitMethod.Awake) 
                 return;
@@ -44,7 +57,7 @@ namespace Services.Optimization.PoolingSystem {
             if (_initMethod != InitMethod.Start) 
                 return;
 
-            if (Initialized) 
+            if (IsInitialized) 
                 return;
 
             Initialize();
@@ -57,7 +70,7 @@ namespace Services.Optimization.PoolingSystem {
             foreach (CreateLayer baker in _createLayers)
                 baker.Initialize(_createrDictionary, _container);
 
-            Initialized = true;
+            IsInitialized = true;
         }
 
         private void Update()

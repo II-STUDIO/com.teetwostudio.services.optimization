@@ -8,7 +8,7 @@ namespace Services.Optimization.PoolingSystem
     /// </summary>
     public class ObjectPooler<TPoolingObject> where TPoolingObject : PoolingObject
     {
-        private List<TPoolingObject> objectPoolings = new List<TPoolingObject>(600);
+        private List<TPoolingObject> objectPoolings = new List<TPoolingObject>(PoolManager.SystemBaseHnadler.MaxCapacity);
 
         private TPoolingObject objjectPool_Ref;
 
