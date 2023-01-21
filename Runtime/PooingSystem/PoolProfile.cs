@@ -6,8 +6,9 @@ namespace Services.Optimization.PoolingSystem
     public class PoolProfile : ScriptableObject
     {
         [SerializeField] private string _customID;
-        [SerializeField] private int _amount = 1;
+        [Space]
         [SerializeField] private PoolingObject _prefab;
+        [SerializeField] private int _amount = 1;
 
         public float lifeTime = 1.5f;
 
