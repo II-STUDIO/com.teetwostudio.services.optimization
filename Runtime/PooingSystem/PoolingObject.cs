@@ -50,7 +50,7 @@ namespace Services.Optimization.PoolingSystem
         /// <param name="deltaTime"></param>
         public virtual void OnUpdate(float deltaTime)
         {
-
+            Debug.Log("Update");
         }
 
         /// <summary>

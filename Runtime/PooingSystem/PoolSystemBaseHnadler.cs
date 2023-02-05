@@ -77,8 +77,11 @@ namespace Services.Optimization.PoolingSystem {
 
         private void OnUpdate(float deltaTime)
         {
+            Debug.Log("Update 2");
             if (PoolManager.ActivatedPoolingObjectCount == 0)
                 return;
+
+            Debug.Log("Update 1");
 
             for (int i = 0; i < PoolManager.ActivatedPoolingObjectCount; i++)
             {
