@@ -40,6 +40,8 @@ namespace Services.Optimization.PoolingSystem {
         {
             base.Awake();
 
+            SystemBaseUpdater.Instance.AddUpdater(OnUpdate);
+
             if (PoolManager.SystemBaseHnadler != null)
                 Destroy(PoolManager.SystemBaseHnadler.gameObject);
 
@@ -99,16 +101,6 @@ namespace Services.Optimization.PoolingSystem {
 
                 _poolingObjectRef.Disabled();
             }
-        }
-
-        private void OnEnable()
-        {
-            SystemBaseUpdater.Instance.AddUpdater(OnUpdate);
-        }
-
-        private void OnDisable()
-        {
-            SystemBaseUpdater.Instance.AddUpdater(OnUpdate);
         }
     }
 
