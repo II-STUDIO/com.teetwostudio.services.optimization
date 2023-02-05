@@ -10,6 +10,8 @@ namespace Services.Optimization.PoolingSystem
         private PoolProfile _profile;
         private Transform _originalPerent;
 
+        [SerializeField] private bool isUpdatable = true;
+        [Space]
         [HideInInspector] public float lifeTimerCountDown = 0f;
 
         /// <summary>
@@ -25,6 +27,7 @@ namespace Services.Optimization.PoolingSystem
         /// </summary>
         public string ID { get; private set; }
         public bool IsActive { get; private set; } = false;
+        public bool IsUpdatable { get => isUpdatable; }
 
         public void SetOriginalPerent(Transform targetPerent) => _originalPerent = targetPerent;
 
@@ -50,7 +53,7 @@ namespace Services.Optimization.PoolingSystem
         /// <param name="deltaTime"></param>
         public virtual void OnUpdate(float deltaTime)
         {
-            Debug.Log("Update");
+            
         }
 
         /// <summary>
@@ -63,7 +66,7 @@ namespace Services.Optimization.PoolingSystem
             IsActive = true;
             lifeTimerCountDown = _profile.lifeTime;
 
-            if (_profile.lifeTime > 0f)
+            if (IsUpdatable)
                 PoolManager.AssignActivatePoolingObject(this);
 
             OnEnabled();
@@ -86,7 +89,7 @@ namespace Services.Optimization.PoolingSystem
             if (transformCache.parent != _originalPerent)
                 transformCache.SetParent(_originalPerent);
 
-            if (_profile.lifeTime > 0f)
+            if (IsUpdatable)
                 PoolManager.UnAssignActivatePoolingObject(this);
 
             OnDisabled();
