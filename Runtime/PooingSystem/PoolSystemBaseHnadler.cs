@@ -17,8 +17,6 @@ namespace Services.Optimization.PoolingSystem {
         private Dictionary<string, PoolerCreater> _createrDictionary = new Dictionary<string, PoolerCreater>();
         private PoolingObject _poolingObjectRef;
 
-        private float _deltaTime;
-
         public List<CreateLayer> CreateLayers 
         { 
             get => _createLayers; 
@@ -89,12 +87,12 @@ namespace Services.Optimization.PoolingSystem {
                 if (_poolingObjectRef == null)
                     continue;
 
-                _poolingObjectRef.OnUpdate(_deltaTime);
+                _poolingObjectRef.OnUpdate(deltaTime);
 
                 if (_poolingObjectRef.lifeTimerCountDown == 0f)
                     continue;
 
-                _poolingObjectRef.lifeTimerCountDown -= _deltaTime;
+                _poolingObjectRef.lifeTimerCountDown -= deltaTime;
 
                 if (_poolingObjectRef.lifeTimerCountDown > 0f)
                     continue;
