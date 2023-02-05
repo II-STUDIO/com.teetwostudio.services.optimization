@@ -6,7 +6,7 @@ namespace Services.Optimization.PoolingSystem {
     /// <summary>
     /// This class is installer of customize pooling object;
     /// </summary>
-    public class PoolSystemBaseHnadler : MonoBehaviour
+    public class PoolSystemBaseHnadler : MonoSingleton<PoolSystemBaseHnadler>
     {
         [SerializeField] private bool _dontDestroyOnLoad = true;
         [SerializeField] private InitMethod _initMethod = InitMethod.Awake;
@@ -36,8 +36,10 @@ namespace Services.Optimization.PoolingSystem {
         public bool IsInitialized { get; private set; } = false;
 
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
+
             if (PoolManager.SystemBaseHnadler != null)
                 Destroy(PoolManager.SystemBaseHnadler.gameObject);
 
@@ -46,7 +48,7 @@ namespace Services.Optimization.PoolingSystem {
             if (_dontDestroyOnLoad)
                 DontDestroyOnLoad(gameObject);
 
-            if (_initMethod != InitMethod.Awake) 
+            if (_initMethod != InitMethod.Awake)
                 return;
 
             Initialize();
@@ -73,31 +75,40 @@ namespace Services.Optimization.PoolingSystem {
             IsInitialized = true;
         }
 
-        private void Update()
+        private void OnUpdate(float deltaTime)
         {
             if (PoolManager.ActivatedPoolingObjectCount == 0)
                 return;
 
-            _deltaTime = Time.deltaTime;
-
-            for(int i = 0; i < PoolManager.ActivatedPoolingObjectCount; i++)
+            for (int i = 0; i < PoolManager.ActivatedPoolingObjectCount; i++)
             {
                 _poolingObjectRef = PoolManager.GlobalPoolingObjects[PoolManager.ActivatePoolingObjects[i]];
 
                 if (_poolingObjectRef == null)
                     continue;
 
+                _poolingObjectRef.OnUpdate(_deltaTime);
+
                 if (_poolingObjectRef.lifeTimerCountDown == 0f)
                     continue;
 
                 _poolingObjectRef.lifeTimerCountDown -= _deltaTime;
-                _poolingObjectRef.OnUpdate(_deltaTime);
 
                 if (_poolingObjectRef.lifeTimerCountDown > 0f)
                     continue;
 
                 _poolingObjectRef.Disabled();
             }
+        }
+
+        private void OnEnable()
+        {
+            SystemBaseUpdater.Instance.AddUpdater(OnUpdate);
+        }
+
+        private void OnDisable()
+        {
+            SystemBaseUpdater.Instance.AddUpdater(OnUpdate);
         }
     }
 
