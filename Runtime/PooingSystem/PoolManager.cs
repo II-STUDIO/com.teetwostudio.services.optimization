@@ -12,7 +12,7 @@ namespace Services.Optimization.PoolingSystem
         /// <summary>
         /// Pooing profile cachse dictionay collection this use for collect pooler for optimize staking same pooling.
         /// </summary>
-        private static Dictionary<string, ObjectPooler<PoolingObject>> poolingProfileRecycleDictionary = new Dictionary<string, ObjectPooler<PoolingObject>>();
+        private static Dictionary<string, object> poolingProfileRecycleDictionary = new Dictionary<string, object>();
 
         /// <summary>
         /// Indexes of pooling object has been arive and active or enabled.
@@ -27,6 +27,8 @@ namespace Services.Optimization.PoolingSystem
         public static int ActivatedPoolingObjectCount { get; private set; } = 0;
         public static int GlobalPoolingObjectCount { get; private set; } = 0;
         public static PoolSystemBaseHnadler SystemBaseHnadler { get; internal set; }
+
+        private static object object_ref;
 
         private static GameObject gameObject_Ref;
 
@@ -96,11 +98,13 @@ namespace Services.Optimization.PoolingSystem
             return null;
         }
 
+        //
+        // Summary:
+        //     Use to create pooler of pool profile or get exited.
         /// <summary>
         /// Call for create pooler of PoolingObject profile.
         /// </summary>
         /// <param name="profile"></param>
-        /// <param name="amount"></param>
         /// <returns>PoolingSystem Componet of created target prefab</returns>
         public static ObjectPooler<TPooingObject> CreatePooler<TPooingObject>(PoolProfile profile) where TPooingObject : PoolingObject
         {
@@ -117,7 +121,7 @@ namespace Services.Optimization.PoolingSystem
 
             pooler = Create<TPooingObject>(profile, profile.Amount);
 
-            poolingProfileRecycleDictionary.Add(profile.ID, pooler as ObjectPooler<PoolingObject>);
+            poolingProfileRecycleDictionary.Add(profile.ID, pooler);
 
             return pooler;
         }
@@ -128,14 +132,16 @@ namespace Services.Optimization.PoolingSystem
         /// <param name="profile"></param>
         /// <param name="amount"></param>
         /// <returns>PoolingSystem Componet of created target prefab</returns>
-        private static ObjectPooler<TPoolingObject> TryCreate<TPoolingObject>(PoolProfile profile, int amount = 5) where TPoolingObject : PoolingObject
+        private static ObjectPooler<TPoolingObject> TryCreate<TPoolingObject>(PoolProfile profile, int amount) where TPoolingObject : PoolingObject
         {
-            if (poolingProfileRecycleDictionary.TryGetValue(profile.ID, out ObjectPooler<PoolingObject> pooler))
+            if (poolingProfileRecycleDictionary.TryGetValue(profile.ID, out object_ref))
             {
+                ObjectPooler<TPoolingObject> pooler = object_ref as ObjectPooler<TPoolingObject>;
+
                 if (amount > pooler.ObjectCount)
                     pooler.AddCount(amount - pooler.ObjectCount);
 
-                return pooler as ObjectPooler<TPoolingObject>;
+                return pooler;
             }
 
             return null;
