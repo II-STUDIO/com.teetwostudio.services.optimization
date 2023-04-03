@@ -15,7 +15,9 @@ namespace Services.Optimization.MeshAnimationSystem
         public bool autoUpdate = true;
 
         private MeshFilter[] meshFilter;
-        private MeshAnimationState currentState;
+        private MeshAnimationState state;
+        private MeshAnimationState state_ref;
+        private MeshConllection meshConllection_ref;
         private TransitionInfo transitionInfo_ref;
         private ParameterInfo parameter;
 
@@ -25,9 +27,10 @@ namespace Services.Optimization.MeshAnimationSystem
         private float frameFrequency;
         private bool isRegistedUpdate = false;
 
-        private int currentStateIndex = 0;
-        private int currentMeshIndex = 0;
+        private int stateIndex = 0;
+        private int meshIndex = 0;
         private int meshIndexCount = 0;
+        private int stateCount = 0;
 
         private Dictionary<string, int> sateIndexHash = new Dictionary<string, int>();
 
@@ -48,23 +51,30 @@ namespace Services.Optimization.MeshAnimationSystem
 #endif
         private void Awake()
         {
-            currentStateIndex = 0;
-            currentMeshIndex = 0;
-            currentState = null;
+            stateIndex = 0;
+            meshIndex = 0;
+            state = null;
 
             if (!controller)
                 return;
 
-            currentStateIndex = controller.defaultStateIndex;
+#if UNITY_EDITOR
+            if (Application.isPlaying && EditorPlayRountine != null)
+                StopCoroutine(EditorPlayRountine);
+#endif
+
+            stateIndex = controller.defaultStateIndex;
             frameFrequency = 1f / controller.fps;
             frameRateCountdown.onComplete = RefreshMesh;
 
             meshFilter = GetComponentsInChildren<MeshFilter>();
 
-            if (controller.states.Count > 0)
+            stateCount = controller.states.Count;
+
+            if (stateCount > 0)
             {
-                currentState = controller.states[currentStateIndex];
-                meshIndexCount = currentState.animation.meshesCollection[0].meshes.Count - 1;
+                state = controller.states[stateIndex];
+                meshIndexCount = state.animation.meshesCollection[0].meshes.Count - 1;
             }
 
             RefreshMesh();
@@ -72,33 +82,39 @@ namespace Services.Optimization.MeshAnimationSystem
 
         private void OnEnable()
         {
-            if (autoUpdate)
+            if (!autoUpdate)
             {
-                isRegistedUpdate = true;
-                frameRateCountdown.Start(frameFrequency);
-                SystemBaseUpdater.Instance.AddUpdater(UpdateFrame);
+                return;
             }
+
+            isRegistedUpdate = true;
+            frameRateCountdown.Start(frameFrequency);
+            SystemBaseUpdater.Instance.AddUpdater(UpdateFrame);
         }
 
         private void OnDisable()
         {
-            if (autoUpdate || isRegistedUpdate)
+            if (!autoUpdate && !isRegistedUpdate)
             {
-                isRegistedUpdate = false;
-                frameRateCountdown.Clear();
-                SystemBaseUpdater.Instance.RemoveUpdater(UpdateFrame);
+                return;
             }
+
+            isRegistedUpdate = false;
+            frameRateCountdown.Clear();
+            SystemBaseUpdater.Instance.RemoveUpdater(UpdateFrame);
         }
 
         public Mesh GetMesh(int stateIndex, int meshIndex)
         {
-            if (controller.states.Count == 0)
+            if (stateCount == 0)
                 return null;
 
-            if (controller.states[stateIndex].animation.meshesCollection.Count == 0)
+            state_ref = controller.states[stateIndex];
+
+            if (state_ref.animation.meshesCollection.Count == 0)
                 return null;
 
-            return controller.states[stateIndex].animation.meshesCollection[0].meshes[meshIndex];
+            return state_ref.animation.meshesCollection[0].meshes[meshIndex];
         }
 
         public int StringToStateIndex(string animationName)
@@ -145,15 +161,18 @@ namespace Services.Optimization.MeshAnimationSystem
             PlayState(targetIndex);
         }
 
-        public void PlayState(int stateIndex)
+        public void PlayState(int targetState)
         {
-            if (stateIndex == currentStateIndex)
+            if (targetState == stateIndex)
                 return;
 
-            currentMeshIndex = 0;
-            currentStateIndex = stateIndex;
-            currentState = controller.states[currentStateIndex];
-            meshIndexCount = currentState.animation.meshesCollection[0].meshes.Count - 1;
+            meshIndex = 0;
+
+            stateIndex = targetState;
+
+            state = controller.states[stateIndex];
+
+            meshIndexCount = state.animation.meshesCollection[0].meshes.Count - 1;
 
             frameRateCountdown.Clear();
 
@@ -169,61 +188,59 @@ namespace Services.Optimization.MeshAnimationSystem
         {
             frameRateCountdown.Start(frameFrequency);
 
-            if (currentState == null)
+            if (state == null)
                 return;
 
-            int collectionCount = currentState.animation.meshesCollection.Count;
+            int collectionCount = state.animation.meshesCollection.Count;
 
             if (collectionCount == 1)
-                meshFilter[0].mesh = currentState.animation.meshesCollection[0].meshes[currentMeshIndex];
+                meshFilter[0].mesh = state.animation.meshesCollection[0].meshes[meshIndex];
             else
             {
                 for(int i = 0; i < collectionCount; i++)
                 {
-                    meshFilter[i].mesh = currentState.animation.meshesCollection[i].meshes[currentMeshIndex];
+                    meshFilter[i].mesh = state.animation.meshesCollection[i].meshes[meshIndex];
                 }
             }
 
-            if (currentMeshIndex < meshIndexCount - 1)
-                currentMeshIndex++;
+            if (meshIndex < meshIndexCount - 1)
+                meshIndex++;
             else
             {
-                if (currentState.animation.isLoop)
+                if (state.animation.isLoop)
                 {
-                    currentMeshIndex = 0;
+                    meshIndex = 0;
                     return;
                 }
 
-                int newStateIndex = GetNextStateIndex();
-
-                PlayState(newStateIndex);
+                PlayState(GetNextStateIndex());
             }
         }
 
         private int GetNextStateIndex()
         {
-            if (currentState.transitionInfos == null)
-                return currentStateIndex;
+            if (state.transitionInfos == null)
+                return stateIndex;
 
-            int infoCount = currentState.transitionInfos.Count;
+            int infoCount = state.transitionInfos.Count;
             if (infoCount == 0)
-                return currentStateIndex;
+                return stateIndex;
 
             if(infoCount == 1)
             {
-                transitionInfo_ref = currentState.transitionInfos[0];
-                return CheckValideCondition(transitionInfo_ref) ? transitionInfo_ref.targetStateIndex : currentStateIndex;
+                transitionInfo_ref = state.transitionInfos[0];
+                return CheckValideCondition(transitionInfo_ref) ? transitionInfo_ref.targetStateIndex : stateIndex;
             }
 
             for(int i = 0; i < infoCount; i++)
             {
-                transitionInfo_ref = currentState.transitionInfos[0];
+                transitionInfo_ref = state.transitionInfos[0];
 
                 if (CheckValideCondition(transitionInfo_ref))
                     return transitionInfo_ref.targetStateIndex;
             }
 
-            return currentStateIndex;
+            return stateIndex;
         }
 
         private bool CheckValideCondition(TransitionInfo transitionInfo)

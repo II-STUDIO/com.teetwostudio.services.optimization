@@ -132,8 +132,22 @@ namespace Services.Optimization.MeshAnimationSystem
                 assetController.fps = fps;
             }
 
+            if(animator.runtimeAnimatorController == null)
+            {
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+
+                Debug.LogError("The animator are not save or exit please 'Ctl + S' if your animator controller are created");
+                if (coroutine != null)
+                    EditorCoroutineUtility.StopCoroutine(coroutine);
+            }
+
             AnimationClip[] animationClips = animator.runtimeAnimatorController.animationClips;
-            Debug.Log($"Found {animationClips.Length} clips. Creating SO with name \"{assetName}\" with Animation FPS {fps}");
+
+            int animationClipsCount = animationClips.Length;
+
+            Debug.Log($"Found {animationClipsCount} clips. Creating SO with name \"{assetName}\" with Animation FPS {fps}");
+
             int clipIndex = 1;
 
             string parentFolder = path + "Baked " + assetName + " Meshs/";
@@ -142,25 +156,29 @@ namespace Services.Optimization.MeshAnimationSystem
 
             foreach (AnimationClip clip in animationClips)
             {
-                Debug.Log($"Processing clip {clipIndex}: \"{clip.name}\". Length: {clip.length:N4}.");
+                string clipName = clip.name;
+                float clibTime = clip.length;
 
-                EditorUtility.DisplayProgressBar("Processing Animations", $"Processing animation {clip.name} ({clipIndex} / {animationClips.Length})", clipIndex / (float)animationClips.Length);
+                Debug.Log($"Processing clip {clipIndex}: \"{clipName}\". Length: {clibTime:N4}.");
+
+                EditorUtility.DisplayProgressBar("Processing Animations", $"Processing animation {clipName} ({clipIndex} / {animationClipsCount})", clipIndex / (float)animationClipsCount);
 
                 assetsAnimation = CreateInstance<MeshAnimation>();
 
-                assetsAnimation.name = clip.name;
-                assetsAnimation.time = clip.length;
-                animator.Play(clip.name);
+                assetsAnimation.name = clipName;
+                assetsAnimation.time = clibTime;
+
+                animator.Play(clipName);
 
                 SkinnedMeshRenderer[] skinnedMeshRenderersTotal = animator.GetComponentsInChildren<SkinnedMeshRenderer>();
 
                 Dictionary<string, int> currentCollection = new Dictionary<string, int>();
                 int currentCollectionIndex = -1;
 
-                for (float time = increment; time < clip.length; time += increment)
-                {
-                    Debug.Log($"Processing {clip.name} frame {(time):N4}");
+                int skinnedCount = activeSkinnedIndexs.Length;
 
+                for (float time = increment; time < clibTime; time += increment)
+                {
                     animator.Update(increment);
 
                     if (preview || isDry)
@@ -168,12 +186,10 @@ namespace Services.Optimization.MeshAnimationSystem
                         yield return new WaitForSeconds(increment);
                     }
 
-                    for(int i = 0; i < activeSkinnedIndexs.Length; i++)
+                    for(int i = 0; i < skinnedCount; i++)
                     {
                         if (!activeSkinnedIndexs[i])
-                        {
                             continue;
-                        }
 
                         SkinnedMeshRenderer renderSkinnedMsh = skinnedMeshRenderersTotal[i];
                         string skinnedName = renderSkinnedMsh.gameObject.name;
@@ -188,13 +204,15 @@ namespace Services.Optimization.MeshAnimationSystem
                                 mesh.Optimize(); // maybe saves
                             }
 
-                            if (!AssetDatabase.IsValidFolder(parentFolder + clip.name + "/" + skinnedName))
+                            string path = parentFolder + clipName + "/" + skinnedName;
+
+                            if (!AssetDatabase.IsValidFolder(path))
                             {
-                                Debug.Log("Path doesn't exist for clip. Creating folder: " + parentFolder + clip.name + "/" + skinnedName);
-                                System.IO.Directory.CreateDirectory(parentFolder + clip.name + "/" + skinnedName);
+                                Debug.Log("Path doesn't exist for clip. Creating folder: " + path);
+                                System.IO.Directory.CreateDirectory(path);
                             }
 
-                            AssetDatabase.CreateAsset(mesh, parentFolder + clip.name + "/" + skinnedName + $"/{skinnedName} {clip.name} - {time:N4}.asset");
+                            AssetDatabase.CreateAsset(mesh, path + $"/{skinnedName} {clipName} - {time:N4}.asset");
 
                             if (currentCollection.ContainsKey(skinnedName))
                             {
@@ -205,20 +223,22 @@ namespace Services.Optimization.MeshAnimationSystem
                                 currentCollectionIndex++;
                                 currentCollection.Add(skinnedName, currentCollectionIndex);
 
-                                assetsAnimation.meshesCollection.Add(new MeshConllection());
-                                assetsAnimation.meshesCollection[currentCollectionIndex].skinName = skinnedName;
-                                assetsAnimation.meshesCollection[currentCollectionIndex].meshes.Add(mesh);
+                                MeshConllection meshConllection = new MeshConllection();
+                                meshConllection.skinName = skinnedName;
+                                meshConllection.meshes.Add(mesh);
+
+                                assetsAnimation.meshesCollection.Add(meshConllection);
                             }
                         }
                     }
                 }
 
-                Debug.Log($"Setting {clip.name} to have {assetsAnimation.meshesCollection.Count} meshes");
+                Debug.Log($"Setting {clipName} to have {assetsAnimation.meshesCollection.Count} meshes");
 
                 if (!preview && !isDry)
                 {
                     EditorUtility.SetDirty(assetsAnimation);
-                    AssetDatabase.CreateAsset(assetsAnimation, path + clip.name + ".asset");
+                    AssetDatabase.CreateAsset(assetsAnimation, path + clipName + ".asset");
 
                     createAnimations.Add(assetsAnimation);
                 }

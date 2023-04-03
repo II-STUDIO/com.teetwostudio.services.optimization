@@ -30,7 +30,7 @@ namespace Services.Optimization.MeshAnimationSystem
                     state = info.states[i];
                     EditorGUILayout.LabelField(
                         "Name : " + state.animation.name +
-                        " , Mesh count : " + state.animation.meshesCollection.Count + 
+                        " , Mesh count : " + state.animation.meshesCollection[0].meshes.Count + 
                         " , Time : " + state.animation.time);
                 }
             });

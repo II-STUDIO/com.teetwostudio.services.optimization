@@ -22,7 +22,6 @@ namespace Services.Optimization.MeshAnimationSystem
         private GUIStyle headerInfoTitleStyle;
         private GUIStyle previewTitleStyle;
         private GUILayoutOption[] listLayout = new GUILayoutOption[2];
-        private GUILayoutOption[] workSpaceLayout = new GUILayoutOption[1];
         private int selectingStateIndex = 0;
         private float stateListItemSize = 22f;
         private float stateListSelectHeight;
@@ -40,24 +39,13 @@ namespace Services.Optimization.MeshAnimationSystem
         {
             animator = target;
 
-           
             selectingStateIndex = 0;
         }
 
         private void OnGUI()
         {
-            if (headerInfoTitleStyle == null)
-                headerInfoTitleStyle = new GUIStyle(GUI.skin.label);
-
-            headerInfoTitleStyle.alignment = TextAnchor.MiddleCenter;
-            headerInfoTitleStyle.fontSize = 13;
-
-            if (previewTitleStyle == null)
-                previewTitleStyle = new GUIStyle(GUI.skin.label);
-
-            previewTitleStyle.alignment = TextAnchor.MiddleCenter;
-            previewTitleStyle.fontSize = 10;
-
+            headerInfoTitleStyle = SetupTextGUIStyle(headerInfoTitleStyle, 13);
+            previewTitleStyle = SetupTextGUIStyle(previewTitleStyle, 10);
 
             if (stateListContent == null)
             {
@@ -65,13 +53,37 @@ namespace Services.Optimization.MeshAnimationSystem
                 stateListContent = new string[count];
 
                 for (int i = 0; i < count; i++)
-                {
                     stateListContent[i] = animator.states[i].animation.name;
-                }
 
                 stateListSelectHeight = stateListItemSize * count;
             }
 
+            DrawWindowTitle();
+
+            if (!animator)
+                return;
+
+            EditorView.HorizontalGroup(EditorKey.GroupBox, () =>
+            {
+                DrawStateList();
+
+                DrawWorkSpace();
+
+            });
+        }
+
+        private GUIStyle SetupTextGUIStyle(GUIStyle gUIStyle, int fontSize)
+        {
+            if (gUIStyle == null)
+                gUIStyle = new GUIStyle(GUI.skin.label);
+
+            gUIStyle.alignment = TextAnchor.MiddleCenter;
+            gUIStyle.fontSize = fontSize;
+            return gUIStyle;
+        }
+
+        private void DrawWindowTitle()
+        {
             EditorView.VerticalGroup(EditorKey.GroupBox, () =>
             {
                 if (animator)
@@ -79,20 +91,9 @@ namespace Services.Optimization.MeshAnimationSystem
                 else
                     EditorGUILayout.LabelField("Select your mesh animator info", headerInfoTitleStyle);
             });
-
-            if (!animator)
-                return;
-
-            EditorView.HorizontalGroup(EditorKey.GroupBox,() =>
-            {
-                DrawAnimationList();
-
-                DrawWorkSpace();
-
-            });
         }
 
-        private void DrawAnimationList()
+        private void DrawStateList()
         {
             listLayout[0] = GUILayout.Width(200);
             listLayout[1] = GUILayout.ExpandHeight(true);
@@ -107,31 +108,16 @@ namespace Services.Optimization.MeshAnimationSystem
         {
             EditorGUILayout.BeginVertical(EditorKey.GroupBox, GUILayout.ExpandHeight(true));
 
-            bool isValideToDraw = animator.states.Count > 0;
+            int stateCount = animator.states.Count;
+            bool isStateIsNotEmpty = stateCount > 0;
 
             EditorView.HorizontalGroup(EditorKey.Box, () =>
             {
-                if (isValideToDraw)
-                {
-                    state = animator.states[selectingStateIndex];
-                    EditorGUILayout.LabelField(state.animation.name, headerInfoTitleStyle);
-                }
-                else
-                    EditorGUILayout.LabelField("State is empty", headerInfoTitleStyle);
-
-                bool isDefaultState = animator.defaultStateIndex == selectingStateIndex;
-                if (animator.defaultStateIndex == selectingStateIndex)
-                    EditorGUILayout.LabelField("Default state", GUI.skin.button, GUILayout.Width(120f));
-                else
-                {
-                    if(GUILayout.Button("Set Default State", GUILayout.Width(120f)))
-                    {
-                        animator.defaultStateIndex = selectingStateIndex;
-                    }
-                }
+                DrawWorkSpaceTitle(isStateIsNotEmpty);
+                DrawSelectingStateDefaultStatus();
             });
 
-            if (!isValideToDraw)
+            if (!isStateIsNotEmpty)
                 return;
 
             state = animator.states[selectingStateIndex];
@@ -139,23 +125,10 @@ namespace Services.Optimization.MeshAnimationSystem
             int transitionCount = state.transitionInfos.Count;
 
             if (transitionCount > 0)
-            {
+                DrawTransitionEelement(transitionCount);
 
-                for (int i = 0; i < transitionCount; i++)
-                {
-                    if (!DrawTransitionElement(state.transitionInfos[i], i))
-                        break;
-                }
-            }
-
-            if (animator.states.Count > 1)
-            {
-                if (GUILayout.Button("+"))
-                {
-                    SetSelectingStateStatus(true);
-                    TransitioninWindowEditor.Open(this);
-                }
-            }
+            if (stateCount > 1)
+                DrawAddTransitionButton();
 
             EditorGUILayout.LabelField("This state is no transition target.", previewTitleStyle);
 
@@ -164,6 +137,51 @@ namespace Services.Optimization.MeshAnimationSystem
             Undo.RecordObject(animator, "Mesh animator controller");
 
             Repaint();
+        }
+
+        private void DrawTransitionEelement(int transitionCount)
+        {
+            for (int i = 0; i < transitionCount; i++)
+            {
+                if (!DrawTransitionElement(state.transitionInfos[i], i))
+                    break;
+            }
+        }
+
+        private void DrawAddTransitionButton()
+        {
+            if (GUILayout.Button("+"))
+            {
+                if (isSelectingState)
+                    return;
+
+                SetSelectingStateStatus(true);
+                TransitioninWindowEditor.Open(this);
+            }
+        }
+
+        private void DrawSelectingStateDefaultStatus()
+        {
+            if (animator.defaultStateIndex == selectingStateIndex)
+                EditorGUILayout.LabelField("Default state", GUI.skin.button, GUILayout.Width(120f));
+            else
+            {
+                if (GUILayout.Button("Set Default State", GUILayout.Width(120f)))
+                {
+                    animator.defaultStateIndex = selectingStateIndex;
+                }
+            }
+        }
+
+        private void DrawWorkSpaceTitle(bool isStateIsNotEmpty)
+        {
+            if (isStateIsNotEmpty)
+            {
+                state = animator.states[selectingStateIndex];
+                EditorGUILayout.LabelField(state.animation.name, headerInfoTitleStyle);
+            }
+            else
+                EditorGUILayout.LabelField("State is empty", headerInfoTitleStyle);
         }
 
         private bool DrawTransitionElement(TransitionInfo transition, int index)

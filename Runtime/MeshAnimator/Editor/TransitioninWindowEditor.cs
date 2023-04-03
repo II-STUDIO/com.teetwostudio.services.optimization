@@ -31,14 +31,10 @@ namespace Services.Optimization.MeshAnimationSystem
             for (int i = 0; i < stateCount; i++)
             {
                 if (i == selectingStateIndex)
-                {
                     continue;
-                }
 
-                if(IsTargetStateTransitionExited(i, selectingState))
-                {
+                if (IsTargetStateTransitionExited(i, selectingState))
                     continue;
-                }
 
                 string stateAnimationName = animatorEditor.animator.states[i].animation.name;
 
@@ -62,6 +58,11 @@ namespace Services.Optimization.MeshAnimationSystem
             }
 
             return false;
+        }
+
+        private void OnDisable()
+        {
+            animatorEditor.SetSelectingStateStatus(false);
         }
     }
 }

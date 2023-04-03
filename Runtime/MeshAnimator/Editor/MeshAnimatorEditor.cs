@@ -27,33 +27,42 @@ namespace Services.Optimization.MeshAnimationSystem
             if (!animator)
                 return;
 
-            animator.controller = EditorGUILayout.ObjectField("Controller", animator.controller, typeof(MeshAnimatorController), true) as MeshAnimatorController;
-            animator.autoUpdate = EditorGUILayout.Toggle("Auto Update", animator.autoUpdate);
-
-            serializedObject.ApplyModifiedProperties();
+            DrawPropertys();
 
             if (!animator.controller)
                 return;
 
-
             if (animator.controller.states.Count == 0)
                 return;
 
+            GenerateAndSetupComponent();
+
+            EditorGUILayout.BeginVertical(EditorKey.GroupBox);
+
+            DrawPreviewField();
+
+            DrawPreviewButton();
+
+            serializedObject.ApplyModifiedProperties();
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void GenerateAndSetupComponent()
+        {
             int meshCollectionCount = animator.controller.states[targetStateIndex].animation.meshesCollection.Count;
 
             meshFilter_temp = animator.GetComponentsInChildren<MeshFilter>();
 
             state = animator.controller.states[targetStateIndex];
 
-            if(meshFilter == null)
+            if (meshFilter == null)
                 meshFilter = new MeshFilter[meshCollectionCount];
 
             if (meshFilter_temp.Length < meshCollectionCount)
             {
-                for(int i = 0;i< meshFilter_temp.Length; i++)
-                {
+                for (int i = 0; i < meshFilter_temp.Length; i++)
                     meshFilter[i] = meshFilter_temp[i];
-                }
 
                 for (int i = meshFilter_temp.Length; i < meshCollectionCount; i++)
                 {
@@ -87,9 +96,18 @@ namespace Services.Optimization.MeshAnimationSystem
                     meshFilter_ref.sharedMesh = meshConllection.meshes[0];
                 }
             }
+        }
 
-            EditorGUILayout.BeginVertical(EditorKey.GroupBox);
+        private void DrawPropertys()
+        {
+            animator.controller = EditorGUILayout.ObjectField("Controller", animator.controller, typeof(MeshAnimatorController), true) as MeshAnimatorController;
+            animator.autoUpdate = EditorGUILayout.Toggle("Auto Update", animator.autoUpdate);
 
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DrawPreviewField()
+        {
             EditorView.HorizontalGroup(() =>
             {
                 EditorGUILayout.LabelField("Preview : " + state.animation.name, GUI.skin.button);
@@ -99,7 +117,10 @@ namespace Services.Optimization.MeshAnimationSystem
                     PreviewSelectionWindowEditor.Open(this);
                 }
             });
+        }
 
+        private void DrawPreviewButton()
+        {
             if (animator.EditorPlayRountine != null)
             {
                 if (GUILayout.Button("Stop"))
@@ -123,10 +144,6 @@ namespace Services.Optimization.MeshAnimationSystem
                     SetMesh(0);
                 }
             }
-
-            serializedObject.ApplyModifiedProperties();
-
-            EditorGUILayout.EndVertical();
         }
 
         private IEnumerator PlayRountine()
