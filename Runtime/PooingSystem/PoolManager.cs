@@ -26,7 +26,7 @@ namespace Services.Optimization.PoolingSystem
 
         public static int ActivatedPoolingObjectCount { get; private set; } = 0;
         public static int GlobalPoolingObjectCount { get; private set; } = 0;
-        public static PoolSystemBaseHnadler SystemBaseHnadler { get; internal set; }
+        public static PoolSystemBaseHandler SystemBaseHnadler { get; internal set; }
 
         private static object object_ref;
 

@@ -6,7 +6,7 @@ namespace Services.Optimization.PoolingSystem {
     /// <summary>
     /// This class is installer of customize pooling object;
     /// </summary>
-    public class PoolSystemBaseHnadler : MonoSingleton<PoolSystemBaseHnadler>
+    public class PoolSystemBaseHandler : MonoSingleton<PoolSystemBaseHandler>
     {
         [SerializeField] private bool _dontDestroyOnLoad = true;
         [SerializeField] private InitMethod _initMethod = InitMethod.Awake;

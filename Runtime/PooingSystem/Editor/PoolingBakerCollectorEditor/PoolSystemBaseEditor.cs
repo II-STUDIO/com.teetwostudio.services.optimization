@@ -7,17 +7,17 @@ using Services.Utility;
 
 namespace Services.Optimization.PoolingSystem.ScriptEditor
 {
-    [CustomEditor(typeof(PoolSystemBaseHnadler))]
+    [CustomEditor(typeof(PoolSystemBaseHandler))]
     public class PoolSystemBaseEditor : Editor
     {
-        PoolSystemBaseHnadler _systemBaseHandler;
+        PoolSystemBaseHandler _systemBaseHandler;
         Dictionary<int, AnimBool> _animBools = new Dictionary<int, AnimBool>();
 
         float _miniBtn = 30f;
 
         public override void OnInspectorGUI()
         {
-            _systemBaseHandler = target as PoolSystemBaseHnadler;
+            _systemBaseHandler = target as PoolSystemBaseHandler;
             if (!_systemBaseHandler) return;
 
              EditorView.VerticalGroup(EditorKey.GroupBox, () =>

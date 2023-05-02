@@ -9,14 +9,14 @@ namespace Services.Optimization.PoolingSystem.ScriptEditor
         [MenuItem("GameObject/Pool SystemBase Handler")]
         public static void CreateAreaEventTriggerBox()
         {
-            if (Object.FindObjectOfType<PoolSystemBaseHnadler>())
+            if (Object.FindObjectOfType<PoolSystemBaseHandler>())
             {
                 Debug.LogWarning("The object type of 'PoolSystemBaseHandler' was created in the scene");
                 return;
             }
 
             GameObject gameObject = new GameObject("System - Pool Systembase Handler");
-            gameObject.AddComponent(typeof(PoolSystemBaseHnadler));
+            gameObject.AddComponent(typeof(PoolSystemBaseHandler));
 
             gameObject.transform.position = Vector3.zero;
         }
