@@ -17,7 +17,7 @@ namespace Services.Optimization.PoolingSystem
         /// <summary>
         /// Indexes of pooling object has been arive and active or enabled.
         /// </summary>
-        public static NativeList<int> ActivatePoolingObjects { get; private set; } = new NativeList<int>(1000, AllocatorManager.TempJob);
+        public static List<int> ActivatePoolingObjects { get; private set; } = new List<int>(1000);
 
         /// <summary>
         /// Pooling object that create into the world.
@@ -159,6 +159,9 @@ namespace Services.Optimization.PoolingSystem
             string name = "Pooling System name : <" + proifle.name + "> id : <" + id + ">";
 
             gameObject_Ref = new GameObject(name);
+
+            if (SystemBaseHnadler.Container)
+                gameObject_Ref.transform.SetParent(SystemBaseHnadler.Container);
 
             ObjectPooler<TPoolingObject> pooler = new ObjectPooler<TPoolingObject>();
 

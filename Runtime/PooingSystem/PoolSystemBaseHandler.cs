@@ -17,6 +17,12 @@ namespace Services.Optimization.PoolingSystem {
         private Dictionary<string, PoolerCreater> _createrDictionary = new Dictionary<string, PoolerCreater>();
         private PoolingObject _poolingObjectRef;
 
+        public Transform Container
+        {
+            get => _container;
+        }
+
+
         public List<CreateLayer> CreateLayers 
         { 
             get => _createLayers; 

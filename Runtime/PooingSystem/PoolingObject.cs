@@ -47,6 +47,21 @@ namespace Services.Optimization.PoolingSystem
             PoolManager.AssignGlobalPoolingObject(this);
         }
 
+        private void ComputeAndUdpate(float deltaTime)
+        {
+            OnUpdate(deltaTime);
+
+            if (lifeTimerCountDown == 0f)
+                return;
+
+            lifeTimerCountDown -= deltaTime;
+
+            if (lifeTimerCountDown > 0f)
+                return;
+
+            Disabled();
+        }
+
         /// <summary>
         /// Invoke every frame like 'Update' of unity mono behaviour
         /// </summary>
@@ -67,7 +82,10 @@ namespace Services.Optimization.PoolingSystem
             lifeTimerCountDown = _profile.lifeTime;
 
             if (IsUpdatable)
+            {
+                //SystemBaseUpdater.Instance.AddUpdater(ComputeAndUdpate);
                 PoolManager.AssignActivatePoolingObject(this);
+            }
 
             OnEnabled();
         }
@@ -90,7 +108,10 @@ namespace Services.Optimization.PoolingSystem
                 transformCache.SetParent(_originalPerent);
 
             if (IsUpdatable)
+            {
+               // SystemBaseUpdater.Instance.RemoveUpdater(ComputeAndUdpate);
                 PoolManager.UnAssignActivatePoolingObject(this);
+            }
 
             OnDisabled();
         }
