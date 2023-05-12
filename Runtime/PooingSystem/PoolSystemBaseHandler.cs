@@ -42,12 +42,15 @@ namespace Services.Optimization.PoolingSystem {
 
         protected override void Awake()
         {
+            if (PoolManager.SystemBaseHnadler != null)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             base.Awake();
 
             SystemBaseUpdater.Instance.AddUpdater(OnUpdate);
-
-            if (PoolManager.SystemBaseHnadler != null)
-                Destroy(PoolManager.SystemBaseHnadler.gameObject);
 
             PoolManager.SystemBaseHnadler = this;
 
