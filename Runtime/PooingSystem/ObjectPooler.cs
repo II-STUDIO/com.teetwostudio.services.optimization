@@ -8,18 +8,17 @@ namespace Services.Optimization.PoolingSystem
     /// </summary>
     public class ObjectPooler<TPoolingObject> where TPoolingObject : PoolingObject
     {
-        private List<TPoolingObject> objectPoolings = new List<TPoolingObject>(PoolManager.SystemBaseHnadler.MaxCapacity);
+        private List<TPoolingObject> objectList = new List<TPoolingObject>(PoolManager.SystemBaseHnadler.MaxCapacity);
 
-        private TPoolingObject objjectPool_Ref;
+        private Dictionary<int, TPoolingObject> objectContainer = new Dictionary<int, TPoolingObject>();
+        private Queue<int> valiableIndex = new Queue<int>(PoolManager.SystemBaseHnadler.MaxCapacity);
 
         private PoolProfile profile;
         private Transform originalPerent;
 
         private string profileID;
 
-        private int currentPooilingIndex = 0;
-
-        public int ObjectCount { get => objectPoolings.Count; }
+        public int ObjectCount { get => objectList.Count; }
 
         public Transform root { get => originalPerent; }
 
@@ -60,19 +59,25 @@ namespace Services.Optimization.PoolingSystem
                 return;
             }
 
-            objjectPool_Ref = (TPoolingObject)Object.Instantiate(profile.Prefab, originalPerent);
+            var objectPool = (TPoolingObject)Object.Instantiate(profile.Prefab, originalPerent);
 
-            objjectPool_Ref.Initialize(profile, profileID);
+            objectPool.Initialize(profile, profileID);
+            objectPool.OnDisabled_Evt += OnObjectDisabled;
 
-            if (!objjectPool_Ref.gameObject) 
+            if (!objectPool.gameObject) 
             { 
                 Debug.LogError("'ObjectPooing' can't create prefab <" + profile.name + ">");
                 return; 
             }
 
-            objjectPool_Ref.gameObject.SetActive(false);
-            objjectPool_Ref.SetOriginalPerent(originalPerent);
-            objectPoolings.Add(objjectPool_Ref);
+            objectPool.gameObject.SetActive(false);
+            objectPool.SetOriginalPerent(originalPerent);
+
+            objectPool.LocalIndex = objectList.Count;
+
+            objectList.Add(objectPool);
+            objectContainer.Add(objectPool.GameObjectId, objectPool);
+            valiableIndex.Enqueue(objectPool.LocalIndex);
         }
 
         /// <summary>
@@ -83,31 +88,27 @@ namespace Services.Optimization.PoolingSystem
         /// <returns>Lasted object prefab index</returns>
         public TPoolingObject Pool(Vector3 poolPosition, Quaternion poolRotation)
         {
-            objjectPool_Ref = GetValidableObject();
+            var objectPool = GetValidableObject();
 
-            objjectPool_Ref.transform.position = poolPosition;
-            objjectPool_Ref.transform.rotation = poolRotation;
-            objjectPool_Ref.transform.localScale = profile.Prefab.transform.localScale;
-            objjectPool_Ref.Enabled();
+            objectPool.transform.position = poolPosition;
+            objectPool.transform.rotation = poolRotation;
+            objectPool.transform.localScale = profile.Prefab.transform.localScale;
+            objectPool.Enabled();
 
-            SetNextIndex();
-
-            return objjectPool_Ref;
+            return objectPool;
         }
 
         public TPoolingObject Pool(Vector3 poolPosition, Quaternion poolRotation, Transform parent)
         {
-            objjectPool_Ref = GetValidableObject();
+            var objectPool = GetValidableObject();
 
-            objjectPool_Ref.transform.position = poolPosition;
-            objjectPool_Ref.transform.rotation = poolRotation;
-            objjectPool_Ref.transform.localScale = profile.Prefab.transform.localScale;
-            objjectPool_Ref.transform.SetParent(parent);
-            objjectPool_Ref.Enabled();
+            objectPool.transform.position = poolPosition;
+            objectPool.transform.rotation = poolRotation;
+            objectPool.transform.localScale = profile.Prefab.transform.localScale;
+            objectPool.transform.SetParent(parent);
+            objectPool.Enabled();
 
-            SetNextIndex();
-
-            return objjectPool_Ref;
+            return objectPool;
         }
 
         /// <summary>
@@ -117,14 +118,14 @@ namespace Services.Optimization.PoolingSystem
         /// <returns>Lasted object prefab index</returns>
         public TPoolingObject Pool(Transform parent)
         {
-            objjectPool_Ref = GetValidableObject();
+            var objectPool = GetValidableObject();
 
-            objjectPool_Ref.transform.SetParent(parent);
-            objjectPool_Ref.transform.localPosition = Vector3.zero;
-            objjectPool_Ref.transform.localScale = profile.Prefab.transform.localScale;
-            objjectPool_Ref.Enabled();
+            objectPool.transform.SetParent(parent);
+            objectPool.transform.localPosition = Vector3.zero;
+            objectPool.transform.localScale = profile.Prefab.transform.localScale;
+            objectPool.Enabled();
 
-            return objjectPool_Ref;
+            return objectPool;
         }
 
         /// <summary>
@@ -134,13 +135,13 @@ namespace Services.Optimization.PoolingSystem
         /// <returns>Lasted object prefab index</returns>
         public TPoolingObject Pool()
         {
-            objjectPool_Ref = GetValidableObject();
+            var objectPool = GetValidableObject();
 
-            objjectPool_Ref.transform.localPosition = Vector3.zero;
-            objjectPool_Ref.transform.localScale = profile.Prefab.transform.localScale;
-            objjectPool_Ref.Enabled();
+            objectPool.transform.localPosition = Vector3.zero;
+            objectPool.transform.localScale = profile.Prefab.transform.localScale;
+            objectPool.Enabled();
 
-            return objjectPool_Ref;
+            return objectPool;
         }
 
         /// <summary>
@@ -149,27 +150,10 @@ namespace Services.Optimization.PoolingSystem
         /// <returns></returns>
         private TPoolingObject GetValidableObject()
         {
-            objjectPool_Ref = objectPoolings[currentPooilingIndex];
-
-            if (objjectPool_Ref.IsActive)
-            {
+            if (valiableIndex.Count == 0)
                 AddNew();
-                currentPooilingIndex = objectPoolings.Count - 1;
-                objjectPool_Ref = objectPoolings[currentPooilingIndex];
-                return objjectPool_Ref;
-            }
 
-            SetNextIndex();
-            return objjectPool_Ref;
-        }
-
-
-        private void SetNextIndex()
-        {
-            if (currentPooilingIndex < objectPoolings.Count - 1) 
-                currentPooilingIndex++;
-            else 
-                currentPooilingIndex = 0;
+            return objectList[valiableIndex.Dequeue()];
         }
 
         public void Dispose()
@@ -179,12 +163,21 @@ namespace Services.Optimization.PoolingSystem
 
         public void DisabledAll()
         {
-            currentPooilingIndex = 0;
-
-            for (int i = 0; i < objectPoolings.Count; i++)
+            for (int i = 0; i < objectList.Count; i++)
             {
-                objectPoolings[i].Disabled();
+                objectList[i].Disabled();
             }
+        }
+
+        private void OnObjectDisabled(int objectId)
+        {
+            if (!objectContainer.TryGetValue(objectId, out TPoolingObject poolingObject))
+            {
+                Debug.LogError($"Object id <{objectId}> not exited in pooler <{profileID}>");
+                return;
+            }
+
+            valiableIndex.Enqueue(poolingObject.LocalIndex);
         }
     }
 }

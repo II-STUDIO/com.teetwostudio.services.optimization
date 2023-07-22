@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Services.Optimization.PoolingSystem
 {
@@ -7,8 +8,8 @@ namespace Services.Optimization.PoolingSystem
     /// </summary>
     public class PoolingObject : MonoBehaviour
     {
-        private PoolProfile _profile;
-        private Transform _originalPerent;
+        private PoolProfile m_profile;
+        private Transform m_originalPerent;
 
         [SerializeField] private bool isUpdatable = true;
         [Space]
@@ -20,26 +21,37 @@ namespace Services.Optimization.PoolingSystem
         public Transform transformCache { get; private set; }
         public GameObject gameObjectCache { get; private set; }
 
-        public int Index { get; set; }
+        public int CumputeIndex { get; set; }
+        public int LocalIndex { get; set; }
 
         /// <summary>
         /// ID of the profile of this pooling Object.
         /// </summary>
         public string ID { get; private set; }
+
+        /// <summary>
+        /// Id of game object.
+        /// </summary>
+        public int GameObjectId { get; private set; }
+
         public bool IsActive { get; private set; } = false;
+
         public bool IsUpdatable { get => isUpdatable; }
 
-        public void SetOriginalPerent(Transform targetPerent) => _originalPerent = targetPerent;
+        public void SetOriginalPerent(Transform targetPerent) => m_originalPerent = targetPerent;
 
+        public event Action<int> OnDisabled_Evt, OnEnabled_Evt;
 
         /// <summary>
         /// This invoke one time when this object is init on 'PoolingSystem'.
         /// </summary>
         public virtual void Initialize(PoolProfile profile, string profileId) 
         {
-            _profile = profile;
+            m_profile = profile;
 
             ID = profileId;
+
+            GameObjectId = gameObject.GetInstanceID();
 
             gameObjectCache = gameObject;
             transformCache = gameObjectCache.transform;
@@ -79,13 +91,16 @@ namespace Services.Optimization.PoolingSystem
             gameObjectCache.SetActive(true);
 
             IsActive = true;
-            lifeTimerCountDown = _profile.lifeTime;
+
+            lifeTimerCountDown = m_profile.lifeTime;
 
             if (IsUpdatable)
             {
                 //SystemBaseUpdater.Instance.AddUpdater(ComputeAndUdpate);
                 PoolManager.AssignActivatePoolingObject(this);
             }
+
+            OnEnabled_Evt?.Invoke(GameObjectId);
 
             OnEnabled();
         }
@@ -101,17 +116,20 @@ namespace Services.Optimization.PoolingSystem
             gameObjectCache.SetActive(false);
 
             IsActive = false;
+
             lifeTimerCountDown = 0f;
             transformCache.localPosition = Vector3.zero;
 
-            if (transformCache.parent != _originalPerent)
-                transformCache.SetParent(_originalPerent);
+            if (transformCache.parent != m_originalPerent)
+                transformCache.SetParent(m_originalPerent);
 
             if (IsUpdatable)
             {
                // SystemBaseUpdater.Instance.RemoveUpdater(ComputeAndUdpate);
                 PoolManager.UnAssignActivatePoolingObject(this);
             }
+
+            OnDisabled_Evt?.Invoke(GameObjectId);
 
             OnDisabled();
         }

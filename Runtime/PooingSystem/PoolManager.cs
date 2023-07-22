@@ -34,15 +34,15 @@ namespace Services.Optimization.PoolingSystem
 
         public static void AssignGlobalPoolingObject(PoolingObject poolingObject)
         {
-            poolingObject.Index = GlobalPoolingObjectCount;
+            poolingObject.CumputeIndex = GlobalPoolingObjectCount;
 
-            GlobalPoolingObjects.Add(poolingObject.Index, poolingObject);
+            GlobalPoolingObjects.Add(poolingObject.CumputeIndex, poolingObject);
             GlobalPoolingObjectCount++;
         }
 
         public static void UnAssigneGlobalPoolingObject(PoolingObject poolingObject)
         {
-            GlobalPoolingObjects.Remove(poolingObject.Index);
+            GlobalPoolingObjects.Remove(poolingObject.CumputeIndex);
             GlobalPoolingObjectCount--;
         }
 
@@ -52,7 +52,7 @@ namespace Services.Optimization.PoolingSystem
         /// <param name="poolingObject"></param>
         public static void AssignActivatePoolingObject(PoolingObject poolingObject)
         {
-            ActivatePoolingObjects.Add(poolingObject.Index);
+            ActivatePoolingObjects.Add(poolingObject.CumputeIndex);
             ActivatedPoolingObjectCount++;
         }
 
@@ -64,7 +64,7 @@ namespace Services.Optimization.PoolingSystem
         {
             for(int i = 0; i < ActivatedPoolingObjectCount; i++)
             {
-                if(ActivatePoolingObjects[i] == poolingObject.Index)
+                if(ActivatePoolingObjects[i] == poolingObject.CumputeIndex)
                 {
                     ActivatePoolingObjects.RemoveAt(i);
                     ActivatedPoolingObjectCount--;
