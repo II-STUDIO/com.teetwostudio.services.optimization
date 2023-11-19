@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Services.Optimization.PoolingSystem
@@ -59,7 +60,7 @@ namespace Services.Optimization.PoolingSystem
                 return;
             }
 
-            var objectPool = (TPoolingObject)Object.Instantiate(profile.Prefab, originalPerent);
+            var objectPool = (TPoolingObject)UnityEngine.Object.Instantiate(profile.Prefab, originalPerent);
 
             objectPool.Initialize(profile, profileID);
             objectPool.OnDisabled_Evt += OnObjectDisabled;
@@ -156,14 +157,34 @@ namespace Services.Optimization.PoolingSystem
             return objectList[valiableIndex.Dequeue()];
         }
 
-        public void Dispose()
+        public void Dispose(bool autoRecycle = true)
         {
-            PoolManager.RemoveFormRecycleDictionary(profileID);
+            DisabledAll();
+
+            if (autoRecycle)
+                PoolManager.RemoveFormRecycleDictionary(profileID);
+
+            UnityEngine.Object.Destroy(originalPerent.gameObject);
+
+            objectList.Clear();
+            objectList = null;
+
+            objectContainer.Clear();
+            objectContainer = null;
+
+            valiableIndex.Clear();
+            valiableIndex = null;
+
+            profile = null;
+            originalPerent = null;
+
+            profileID = null;
         }
 
         public void DisabledAll()
         {
-            for (int i = 0; i < objectList.Count; i++)
+            int count = objectList.Count;
+            for (int i = 0; i < count; i++)
             {
                 objectList[i].Disabled();
             }

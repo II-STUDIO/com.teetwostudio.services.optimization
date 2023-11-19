@@ -170,12 +170,30 @@ namespace Services.Optimization.PoolingSystem
             return pooler;
         }
 
+        public static void DisposeAll()
+        {
+            var values = poolingProfileRecycleDictionary.Values;
+            foreach (ObjectPooler<PoolingObject> system in values)
+            {
+                system.Dispose(false);
+            }
+
+            poolingProfileRecycleDictionary.Clear();
+
+            ActivatePoolingObjects.Clear();
+            GlobalPoolingObjects.Clear();
+
+            ActivatedPoolingObjectCount = 0;
+            GlobalPoolingObjectCount = 0;
+        }
+
         /// <summary>
         /// Disabled all pooling object.
         /// </summary>
         public static void DisabledAll()
         {
-            foreach(ObjectPooler<PoolingObject> system in poolingProfileRecycleDictionary.Values)
+            var values = poolingProfileRecycleDictionary.Values;
+            foreach (ObjectPooler<PoolingObject> system in values)
             {
                 system.DisabledAll();
             }

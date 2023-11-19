@@ -1,12 +1,12 @@
 {
     "name": "com.teetwostudio.services.opimization",
     "version": "0.0.1",
-    "unityRelease": "11f1",
+    "unityRelease": "2f1",
     "displayName": "TEE II Studio Services opimization",
     "description": "This help your optimize with hight performace code.",
     "dependencies": {
       "com.unity.collections": "1.2.4",
-      "com.teetwostudio.services.utility": "0.0.1",
+      "com.teetwostudio.services.utility": "1.0.0",
       "com.unity.editorcoroutines": "1.0.0"
     },
     "keywords": [
@@ -14,7 +14,7 @@
       "Services"
     ],
     "category": "Utility",
-    "unity": "2021.3",
+    "unity": "2022.3",
     "author": {
       "name": "TEE II studio",
       "email": "watchaphon40225@gmail.com"

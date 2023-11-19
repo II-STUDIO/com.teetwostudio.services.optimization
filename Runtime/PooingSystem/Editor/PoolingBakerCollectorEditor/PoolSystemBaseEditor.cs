@@ -23,6 +23,7 @@ namespace Services.Optimization.PoolingSystem.ScriptEditor
              EditorView.VerticalGroup(EditorKey.GroupBox, () =>
              {
                  PoolEditorCache.objectPreview = (ObjectPreview)EditorGUILayout.EnumPopup("Preview Object",PoolEditorCache.objectPreview);
+                 EditorGUILayout.PropertyField(serializedObject.FindProperty("_dontDestroyOnLoad"));
                  EditorGUILayout.PropertyField(serializedObject.FindProperty("_initMethod"));
                  EditorGUILayout.PropertyField(serializedObject.FindProperty("_maxCapacity"));
                  EditorGUILayout.PropertyField(serializedObject.FindProperty("_container"));
