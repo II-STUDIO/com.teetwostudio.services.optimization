@@ -18,8 +18,6 @@ namespace Services.Optimization.MeshAnimationSystem
         private int meshIndex = 0;
         private int targetStateIndex = 0;
 
-        private bool isSelecting = false;
-
         public override void OnInspectorGUI()
         {
             animator = target as MeshAnimator;
