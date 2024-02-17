@@ -153,8 +153,6 @@ namespace Services.Optimization.PoolingSystem
                 Object.Destroy(obj.gameObject);
             }
 
-            Object.Destroy(originalPerent.gameObject);
-
             objectContainer.Clear();
 
             valiableIndex.Clear();

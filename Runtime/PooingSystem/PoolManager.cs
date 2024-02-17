@@ -97,8 +97,6 @@ namespace Services.Optimization.PoolingSystem
             {
                 system.Dispose(autoRecycle: false);
             }
-
-            poolersDict.Clear();
         }
 
         /// <summary>
