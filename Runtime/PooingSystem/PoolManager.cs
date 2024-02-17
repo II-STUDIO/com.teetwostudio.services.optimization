@@ -29,21 +29,21 @@ namespace Services.Optimization.PoolingSystem
             return null;
         }
 
-        //
-        // Summary:
-        //     Use to create pooler of pool profile or get exited.
+        ///
+        /// Summary:
+        ///     Use to create pooler of pool profile or get exited.
         /// <summary>
         /// Call for create pooler of PoolingObject profile.
         /// </summary>
         /// <returns>PoolingSystem Componet of created target prefab</returns>
         public static Pooler<TPoolingObject> CreatePooler<TPoolingObject>(TPoolingObject prefab) where TPoolingObject : PoolingObject
         {
-            Pooler<TPoolingObject> pooler = TryCreate<TPoolingObject>(prefab);
+            Pooler<TPoolingObject> pooler = GetExisted(prefab);
 
             if (pooler != null) 
                 return pooler;
 
-            pooler = Create<TPoolingObject>(prefab);
+            pooler = Create(prefab);
 
             poolersDict.Add(prefab, pooler);
 
@@ -55,7 +55,7 @@ namespace Services.Optimization.PoolingSystem
         /// </summary>
         /// <param name="prefab"></param>
         /// <returns>PoolingSystem Componet of created target prefab</returns>
-        private static Pooler<TPoolingObject> TryCreate<TPoolingObject>(TPoolingObject prefab) where TPoolingObject : PoolingObject
+        private static Pooler<TPoolingObject> GetExisted<TPoolingObject>(TPoolingObject prefab) where TPoolingObject : PoolingObject
         {
             if (poolersDict.TryGetValue(prefab, out var poolerObj))
             {
@@ -89,13 +89,16 @@ namespace Services.Optimization.PoolingSystem
             return pooler;
         }
 
+        /// <summary>
+        /// Dispose all pooeler.
+        /// </summary>
         public static void DisposeAll()
         {
             var values = poolersDict.Values;
 
             foreach (Pooler<PoolingObject> system in values)
             {
-                system.Dispose(autoRecycle: false);
+                system.Dispose();
             }
         }
 
@@ -110,16 +113,5 @@ namespace Services.Optimization.PoolingSystem
                 system.DisabledAll();
             }
         }
-
-        /// <summary>
-        /// Call to clear dictionary of pooling data case.
-        /// </summary>
-        public static void ClearRecycleDictionary() => poolersDict.Clear();
-
-        /// <summary>
-        /// Call to remove pooling width matches id.
-        /// </summary>
-        /// <param name="prefab"></param>
-        public static void RemoveFormRecycleDictionary(PoolingObject prefab) => poolersDict.Remove(prefab);
     }
 }

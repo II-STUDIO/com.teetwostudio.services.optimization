@@ -55,11 +55,11 @@ namespace Services.Optimization.PoolingSystem
 
         protected virtual void Update()
         {
-            ComputeAndUdpate(SystemTime.DeltaTime);
+            ComputeAndUdpate(Time.deltaTime);
         }
 
         /// <summary>
-        /// Make object enabled.
+        /// Enabled object *** not use this pool will automatic call this when it take form pool.
         /// </summary>
         public void EnabledPool()
         {
@@ -75,7 +75,7 @@ namespace Services.Optimization.PoolingSystem
         }
 
         /// <summary>
-        /// Make object disabled.
+        /// Disabled object and return to pool.
         /// </summary>
         public void DisabledPool()
         {

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace Services.Optimization.PoolingSystem
 {
@@ -134,16 +136,15 @@ namespace Services.Optimization.PoolingSystem
         {
             if (valiableIndex.Count == 0)
                 AddNew();
-
             return objectContainer[valiableIndex.Dequeue()];
         }
 
-        public void Dispose(bool autoRecycle = true)
+        /// <summary>
+        /// Use this to disabled all pooling that create by this group and that destroy them all.
+        /// </summary>
+        public void Dispose()
         {
             DisabledAll();
-
-            if (autoRecycle)
-                PoolManager.RemoveFormRecycleDictionary(prefab);
 
             var values = objectContainer.Values;
             foreach(var obj in values)
@@ -158,6 +159,9 @@ namespace Services.Optimization.PoolingSystem
             valiableIndex.Clear();
         }
 
+        /// <summary>
+        /// Disabed all pooling.
+        /// </summary>
         public void DisabledAll()
         {
             var values = objectContainer.Values;
