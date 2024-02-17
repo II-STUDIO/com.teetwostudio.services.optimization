@@ -8,26 +8,15 @@ namespace Services.Optimization.PoolingSystem
     /// </summary>
     public class PoolingObject : MonoBehaviour
     {
-        private PoolProfile m_profile;
         private Transform m_originalPerent;
 
-        [SerializeField] private bool isUpdatable = true;
+        [SerializeField] private float lifeTime = 0f;
         [Space]
-        [HideInInspector] public float lifeTimerCountDown = 0f;
 
-        /// <summary>
-        /// The fasted for access this transform of this pooling object.
-        /// </summary>
+        [HideInInspector] public float m_runtime_lifeTime = 0f;
+
         public Transform transformCache { get; private set; }
         public GameObject gameObjectCache { get; private set; }
-
-        public int CumputeIndex { get; set; }
-        public int LocalIndex { get; set; }
-
-        /// <summary>
-        /// ID of the profile of this pooling Object.
-        /// </summary>
-        public string ID { get; private set; }
 
         /// <summary>
         /// Id of game object.
@@ -36,8 +25,6 @@ namespace Services.Optimization.PoolingSystem
 
         public bool IsActive { get; private set; } = false;
 
-        public bool IsUpdatable { get => isUpdatable; }
-
         public void SetOriginalPerent(Transform targetPerent) => m_originalPerent = targetPerent;
 
         public event Action<int> OnDisabled_Evt, OnEnabled_Evt;
@@ -45,99 +32,75 @@ namespace Services.Optimization.PoolingSystem
         /// <summary>
         /// This invoke one time when this object is init on 'PoolingSystem'.
         /// </summary>
-        public virtual void Initialize(PoolProfile profile, string profileId) 
+        public virtual void Initialize() 
         {
-            m_profile = profile;
-
-            ID = profileId;
-
             GameObjectId = gameObject.GetInstanceID();
 
             gameObjectCache = gameObject;
             transformCache = gameObjectCache.transform;
-
-            PoolManager.AssignGlobalPoolingObject(this);
         }
 
         private void ComputeAndUdpate(float deltaTime)
         {
-            OnUpdate(deltaTime);
-
-            if (lifeTimerCountDown == 0f)
+            if (m_runtime_lifeTime == 0f)
                 return;
 
-            lifeTimerCountDown -= deltaTime;
+            m_runtime_lifeTime -= deltaTime;
 
-            if (lifeTimerCountDown > 0f)
+            if (m_runtime_lifeTime > 0f)
                 return;
 
-            Disabled();
+            DisabledPool();
         }
 
-        /// <summary>
-        /// Invoke every frame like 'Update' of unity mono behaviour
-        /// </summary>
-        /// <param name="deltaTime"></param>
-        public virtual void OnUpdate(float deltaTime)
+        protected virtual void Update()
         {
-
+            ComputeAndUdpate(SystemTime.DeltaTime);
         }
 
         /// <summary>
         /// Make object enabled.
         /// </summary>
-        public void Enabled()
+        public void EnabledPool()
         {
             gameObjectCache.SetActive(true);
 
             IsActive = true;
 
-            lifeTimerCountDown = m_profile.lifeTime;
-
-            if (IsUpdatable)
-            {
-                //SystemBaseUpdater.Instance.AddUpdater(ComputeAndUdpate);
-                PoolManager.AssignActivatePoolingObject(this);
-            }
+            m_runtime_lifeTime = lifeTime;
 
             OnEnabled_Evt?.Invoke(GameObjectId);
 
-            OnEnabled();
+            OnEnabledPool();
         }
 
         /// <summary>
         /// Make object disabled.
         /// </summary>
-        public void Disabled()
+        public void DisabledPool()
         {
-            if (!gameObjectCache.activeSelf) 
+            if (!IsActive) 
                 return;
 
             gameObjectCache.SetActive(false);
 
             IsActive = false;
 
-            lifeTimerCountDown = 0f;
+            m_runtime_lifeTime = 0f;
             transformCache.localPosition = Vector3.zero;
 
             if (transformCache.parent != m_originalPerent)
                 transformCache.SetParent(m_originalPerent);
 
-            if (IsUpdatable)
-            {
-               // SystemBaseUpdater.Instance.RemoveUpdater(ComputeAndUdpate);
-                PoolManager.UnAssignActivatePoolingObject(this);
-            }
-
             OnDisabled_Evt?.Invoke(GameObjectId);
 
-            OnDisabled();
+            OnDisabledPool();
         }
 
         /// <summary>
         /// This fuction is invoke when this object has pooled.
         /// </summary>
-        protected virtual void OnEnabled()
+        protected virtual void OnEnabledPool()
         {
 
         }
@@ -145,14 +108,17 @@ namespace Services.Optimization.PoolingSystem
         /// <summary>
         /// This fuction is invoke when this object has disabled.
         /// </summary>
-        protected virtual void OnDisabled()
+        protected virtual void OnDisabledPool()
         {
 
         }
 
-        protected virtual void OnDestroy()
+        /// <summary>
+        /// This function is invoke before destroy this object.
+        /// </summary>
+        public virtual void OnDisposeOrDestroy()
         {
-            PoolManager.UnAssigneGlobalPoolingObject(this);
+
         }
     }
 }

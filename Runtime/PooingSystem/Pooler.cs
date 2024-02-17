@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Services.Optimization.PoolingSystem
@@ -7,19 +6,15 @@ namespace Services.Optimization.PoolingSystem
     /// <summary>
     /// Pooling system for target of initialized prefab object.
     /// </summary>
-    public class ObjectPooler<TPoolingObject> where TPoolingObject : PoolingObject
+    public class Pooler<TPoolingObject> where TPoolingObject : PoolingObject
     {
-        private List<TPoolingObject> objectList = new List<TPoolingObject>(PoolManager.SystemBaseHnadler.MaxCapacity);
-
         private Dictionary<int, TPoolingObject> objectContainer = new Dictionary<int, TPoolingObject>();
-        private Queue<int> valiableIndex = new Queue<int>(PoolManager.SystemBaseHnadler.MaxCapacity);
+        private Queue<int> valiableIndex = new Queue<int>(PoolSetting.Instance.MaxCapacity);
 
-        private PoolProfile profile;
+        private TPoolingObject prefab;
         private Transform originalPerent;
 
-        private string profileID;
-
-        public int ObjectCount { get => objectList.Count; }
+        public int ObjectCount { get => objectContainer.Count; }
 
         public Transform root { get => originalPerent; }
 
@@ -27,19 +22,11 @@ namespace Services.Optimization.PoolingSystem
         /// <summary>
         /// This method use for installation pooling system and init all pooling objects of target prefab width parent.
         /// </summary>
-        /// <param name="profile"></param>
-        /// <param name="amount"></param>
-        public void Initialize(PoolProfile profile, int amount, Transform parent)
+        public void Initialize(TPoolingObject prefab, Transform parent)
         {
-            this.profile = profile;
+            this.prefab = prefab;
 
             originalPerent = parent;
-            profileID = profile.ID;
-
-            for (int i = 0; i < amount; i++)
-            {
-                AddNew();
-            }
         }
 
         /// <summary>
@@ -54,31 +41,26 @@ namespace Services.Optimization.PoolingSystem
 
         private void AddNew()
         {
-            if(profile.Prefab == null)
+            if(prefab == null)
             {
                 Debug.LogErrorFormat("Prefab of Pooling profile can't be null or emty");
                 return;
             }
 
-            var objectPool = (TPoolingObject)UnityEngine.Object.Instantiate(profile.Prefab, originalPerent);
-
-            objectPool.Initialize(profile, profileID);
-            objectPool.OnDisabled_Evt += OnObjectDisabled;
-
-            if (!objectPool.gameObject) 
-            { 
-                Debug.LogError("'ObjectPooing' can't create prefab <" + profile.name + ">");
-                return; 
+            var objectPool = UnityEngine.Object.Instantiate(prefab, originalPerent);
+            if (!objectPool)
+            {
+                Debug.LogError("'ObjectPooing' can't create prefab <" + prefab.name + ">");
+                return;
             }
 
+            objectPool.Initialize();
+            objectPool.OnDisabled_Evt += OnDisabledPool;
             objectPool.gameObject.SetActive(false);
             objectPool.SetOriginalPerent(originalPerent);
 
-            objectPool.LocalIndex = objectList.Count;
-
-            objectList.Add(objectPool);
             objectContainer.Add(objectPool.GameObjectId, objectPool);
-            valiableIndex.Enqueue(objectPool.LocalIndex);
+            valiableIndex.Enqueue(objectPool.GameObjectId);
         }
 
         /// <summary>
@@ -93,8 +75,8 @@ namespace Services.Optimization.PoolingSystem
 
             objectPool.transform.position = poolPosition;
             objectPool.transform.rotation = poolRotation;
-            objectPool.transform.localScale = profile.Prefab.transform.localScale;
-            objectPool.Enabled();
+            objectPool.transform.localScale = prefab.transform.localScale;
+            objectPool.EnabledPool();
 
             return objectPool;
         }
@@ -105,9 +87,9 @@ namespace Services.Optimization.PoolingSystem
 
             objectPool.transform.position = poolPosition;
             objectPool.transform.rotation = poolRotation;
-            objectPool.transform.localScale = profile.Prefab.transform.localScale;
+            objectPool.transform.localScale = prefab.transform.localScale;
             objectPool.transform.SetParent(parent);
-            objectPool.Enabled();
+            objectPool.EnabledPool();
 
             return objectPool;
         }
@@ -123,8 +105,8 @@ namespace Services.Optimization.PoolingSystem
 
             objectPool.transform.SetParent(parent);
             objectPool.transform.localPosition = Vector3.zero;
-            objectPool.transform.localScale = profile.Prefab.transform.localScale;
-            objectPool.Enabled();
+            objectPool.transform.localScale = prefab.transform.localScale;
+            objectPool.EnabledPool();
 
             return objectPool;
         }
@@ -132,15 +114,14 @@ namespace Services.Optimization.PoolingSystem
         /// <summary>
         /// Call for pool object prefab and enabled.
         /// </summary>
-        /// <param name="parent"></param>
         /// <returns>Lasted object prefab index</returns>
         public TPoolingObject Pool()
         {
             var objectPool = GetValidableObject();
 
             objectPool.transform.localPosition = Vector3.zero;
-            objectPool.transform.localScale = profile.Prefab.transform.localScale;
-            objectPool.Enabled();
+            objectPool.transform.localScale = prefab.transform.localScale;
+            objectPool.EnabledPool();
 
             return objectPool;
         }
@@ -154,7 +135,7 @@ namespace Services.Optimization.PoolingSystem
             if (valiableIndex.Count == 0)
                 AddNew();
 
-            return objectList[valiableIndex.Dequeue()];
+            return objectContainer[valiableIndex.Dequeue()];
         }
 
         public void Dispose(bool autoRecycle = true)
@@ -162,43 +143,41 @@ namespace Services.Optimization.PoolingSystem
             DisabledAll();
 
             if (autoRecycle)
-                PoolManager.RemoveFormRecycleDictionary(profileID);
+                PoolManager.RemoveFormRecycleDictionary(prefab);
 
-            UnityEngine.Object.Destroy(originalPerent.gameObject);
+            var values = objectContainer.Values;
+            foreach(var obj in values)
+            {
+                obj.OnDisposeOrDestroy();
 
-            objectList.Clear();
-            objectList = null;
+                Object.Destroy(obj.gameObject);
+            }
+
+            Object.Destroy(originalPerent.gameObject);
 
             objectContainer.Clear();
-            objectContainer = null;
 
             valiableIndex.Clear();
-            valiableIndex = null;
-
-            profile = null;
-            originalPerent = null;
-
-            profileID = null;
         }
 
         public void DisabledAll()
         {
-            int count = objectList.Count;
-            for (int i = 0; i < count; i++)
+            var values = objectContainer.Values;
+            foreach (var obj in values)
             {
-                objectList[i].Disabled();
+                obj.DisabledPool();
             }
         }
 
-        private void OnObjectDisabled(int objectId)
+        private void OnDisabledPool(int objectId)
         {
-            if (!objectContainer.TryGetValue(objectId, out TPoolingObject poolingObject))
+            if (!objectContainer.ContainsKey(objectId))
             {
-                Debug.LogError($"Object id <{objectId}> not exited in pooler <{profileID}>");
+                Debug.LogError($"Object id <{objectId}> not exited in pooler");
                 return;
             }
 
-            valiableIndex.Enqueue(poolingObject.LocalIndex);
+            valiableIndex.Enqueue(objectId);
         }
     }
 }
