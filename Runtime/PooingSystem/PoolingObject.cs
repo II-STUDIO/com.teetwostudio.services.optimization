@@ -6,7 +6,7 @@ namespace Services.Optimization.PoolingSystem
     /// <summary>
     /// Pooling object controllable of prefab for poolable.
     /// </summary>
-    public class PoolingObject : MonoBehaviour
+    public class PoolingObject : LoopUpdateMonoBehaviour
     {
         private Transform m_originalPerent;
 
@@ -51,11 +51,6 @@ namespace Services.Optimization.PoolingSystem
                 return;
 
             DisabledPool();
-        }
-
-        protected virtual void Update()
-        {
-            ComputeAndUdpate(Time.deltaTime);
         }
 
         /// <summary>
@@ -119,6 +114,11 @@ namespace Services.Optimization.PoolingSystem
         public virtual void OnDisposeOrDestroy()
         {
 
+        }
+
+        public override void LoopUpdateEvent(float deltaTime)
+        {
+            ComputeAndUdpate(deltaTime);
         }
     }
 }

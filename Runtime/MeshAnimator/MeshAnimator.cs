@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Services.Optimization.MeshAnimationSystem
 {
     [ExecuteInEditMode]
-    public class MeshAnimator : MonoBehaviour
+    public class MeshAnimator : LoopUpdateMonoBehaviour
     {
         public MeshAnimatorController controller;
 
@@ -80,7 +80,7 @@ namespace Services.Optimization.MeshAnimationSystem
             RefreshMesh();
         }
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
             if (!autoUpdate)
             {
@@ -89,10 +89,11 @@ namespace Services.Optimization.MeshAnimationSystem
 
             isRegistedUpdate = true;
             frameRateCountdown.Start(frameFrequency);
-            SystemBaseUpdater.Instance.AddUpdater(UpdateFrame);
+
+            base.OnEnable();
         }
 
-        private void OnDisable()
+        protected override void OnDisable()
         {
             if (!autoUpdate && !isRegistedUpdate)
             {
@@ -101,7 +102,8 @@ namespace Services.Optimization.MeshAnimationSystem
 
             isRegistedUpdate = false;
             frameRateCountdown.Clear();
-            SystemBaseUpdater.Instance.RemoveUpdater(UpdateFrame);
+
+            base.OnDisable();
         }
 
         public Mesh GetMesh(int stateIndex, int meshIndex)
@@ -179,9 +181,9 @@ namespace Services.Optimization.MeshAnimationSystem
             RefreshMesh();
         }
 
-        public void UpdateFrame(float deltaTime)
+        public override void LoopUpdateEvent(float deltaTime)
         {
-            frameRateCountdown.Update(deltaTime);
+            frameRateCountdown.LoopUpdateEvent(deltaTime);
         }
 
         private void RefreshMesh()
