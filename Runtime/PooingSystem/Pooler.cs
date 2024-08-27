@@ -1,24 +1,24 @@
 ﻿using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace Services.Optimization.PoolingSystem
 {
     /// <summary>
     /// Pooling system for target of initialized prefab object.
     /// </summary>
-    public class Pooler<TPoolingObject> where TPoolingObject : PoolingObject
+    public class Pooler<TPoolingObject> : IPooler where TPoolingObject : PoolingObject
     {
-        private Dictionary<int, TPoolingObject> objectContainer = new Dictionary<int, TPoolingObject>();
-        private Queue<int> valiableIndex = new Queue<int>(PoolSetting.Instance.MaxCapacity);
+        private Dictionary<int, TPoolingObject> container = new(PoolSetting.Instance.MaxCapacity);
+        private Queue<int> valiableId = new(PoolSetting.Instance.MaxCapacity);
 
         private TPoolingObject prefab;
         private Transform originalPerent;
 
-        public int ObjectCount { get => objectContainer.Count; }
+        public int ObjectCount { get => container.Count; }
 
         public Transform root { get => originalPerent; }
+
+        private Vector3 prefabScale;
 
 
         /// <summary>
@@ -27,6 +27,7 @@ namespace Services.Optimization.PoolingSystem
         public void Initialize(TPoolingObject prefab, Transform parent)
         {
             this.prefab = prefab;
+            prefabScale = prefab.transform.localScale;
 
             originalPerent = parent;
         }
@@ -61,8 +62,8 @@ namespace Services.Optimization.PoolingSystem
             objectPool.gameObject.SetActive(false);
             objectPool.SetOriginalPerent(originalPerent);
 
-            objectContainer.Add(objectPool.GameObjectId, objectPool);
-            valiableIndex.Enqueue(objectPool.GameObjectId);
+            container.Add(objectPool.GameObjectId, objectPool);
+            valiableId.Enqueue(objectPool.GameObjectId);
         }
 
         /// <summary>
@@ -75,9 +76,8 @@ namespace Services.Optimization.PoolingSystem
         {
             var objectPool = GetValidableObject();
 
-            objectPool.transform.position = poolPosition;
-            objectPool.transform.rotation = poolRotation;
-            objectPool.transform.localScale = prefab.transform.localScale;
+            objectPool.transformCache.SetPositionAndRotation(poolPosition, poolRotation);
+            objectPool.transformCache.localScale = prefabScale;
             objectPool.EnabledPool();
 
             return objectPool;
@@ -87,10 +87,9 @@ namespace Services.Optimization.PoolingSystem
         {
             var objectPool = GetValidableObject();
 
-            objectPool.transform.position = poolPosition;
-            objectPool.transform.rotation = poolRotation;
-            objectPool.transform.localScale = prefab.transform.localScale;
-            objectPool.transform.SetParent(parent);
+            objectPool.transformCache.SetPositionAndRotation(poolPosition, poolRotation);
+            objectPool.transformCache.localScale = prefabScale;
+            objectPool.transformCache.SetParent(parent);
             objectPool.EnabledPool();
 
             return objectPool;
@@ -105,9 +104,9 @@ namespace Services.Optimization.PoolingSystem
         {
             var objectPool = GetValidableObject();
 
-            objectPool.transform.SetParent(parent);
-            objectPool.transform.localPosition = Vector3.zero;
-            objectPool.transform.localScale = prefab.transform.localScale;
+            objectPool.transformCache.SetParent(parent);
+            objectPool.transformCache.localPosition = Vector3.zero;
+            objectPool.transformCache.localScale = prefabScale;
             objectPool.EnabledPool();
 
             return objectPool;
@@ -121,8 +120,8 @@ namespace Services.Optimization.PoolingSystem
         {
             var objectPool = GetValidableObject();
 
-            objectPool.transform.localPosition = Vector3.zero;
-            objectPool.transform.localScale = prefab.transform.localScale;
+            objectPool.transformCache.localPosition = Vector3.zero;
+            objectPool.transformCache.localScale = prefabScale;
             objectPool.EnabledPool();
 
             return objectPool;
@@ -134,9 +133,10 @@ namespace Services.Optimization.PoolingSystem
         /// <returns></returns>
         private TPoolingObject GetValidableObject()
         {
-            if (valiableIndex.Count == 0)
+            if (valiableId.Count == 0)
                 AddNew();
-            return objectContainer[valiableIndex.Dequeue()];
+
+            return container[valiableId.Dequeue()];
         }
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace Services.Optimization.PoolingSystem
         {
             DisabledAll();
 
-            var values = objectContainer.Values;
+            var values = container.Values;
             foreach(var obj in values)
             {
                 obj.OnDisposeOrDestroy();
@@ -154,9 +154,9 @@ namespace Services.Optimization.PoolingSystem
                 Object.Destroy(obj.gameObject);
             }
 
-            objectContainer.Clear();
+            container.Clear();
 
-            valiableIndex.Clear();
+            valiableId.Clear();
         }
 
         /// <summary>
@@ -164,7 +164,7 @@ namespace Services.Optimization.PoolingSystem
         /// </summary>
         public void DisabledAll()
         {
-            var values = objectContainer.Values;
+            var values = container.Values;
             foreach (var obj in values)
             {
                 obj.DisabledPool();
@@ -173,13 +173,15 @@ namespace Services.Optimization.PoolingSystem
 
         private void OnDisabledPool(int objectId)
         {
-            if (!objectContainer.ContainsKey(objectId))
+            if (!container.ContainsKey(objectId))
             {
                 Debug.LogError($"Object id <{objectId}> not exited in pooler");
                 return;
             }
 
-            valiableIndex.Enqueue(objectId);
+            valiableId.Enqueue(objectId);
         }
     }
+
+    public interface IPooler { }
 }

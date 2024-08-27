@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Unity.Collections;
 using UnityEngine;
 
 namespace Services.Optimization.PoolingSystem
@@ -12,7 +11,7 @@ namespace Services.Optimization.PoolingSystem
         /// <summary>
         /// Pooler container.
         /// </summary>
-        private static Dictionary<PoolingObject, object> poolersDict = new Dictionary<PoolingObject, object>();
+        private static Dictionary<PoolingObject, IPooler> poolersDict = new Dictionary<PoolingObject, IPooler>(300);
 
         /// <summary>
         /// Call for find pooler of PoolingObject profile with matches id.
