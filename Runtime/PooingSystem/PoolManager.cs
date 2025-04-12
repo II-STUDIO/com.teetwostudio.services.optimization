@@ -95,7 +95,7 @@ namespace Services.Optimization.PoolingSystem
         {
             var values = poolersDict.Values;
 
-            foreach (Pooler<PoolingObject> system in values)
+            foreach (IPooler system in values)
             {
                 system.Dispose();
             }
@@ -107,7 +107,7 @@ namespace Services.Optimization.PoolingSystem
         public static void DisabledAll()
         {
             var values = poolersDict.Values;
-            foreach (Pooler<PoolingObject> system in values)
+            foreach (IPooler system in values)
             {
                 system.DisabledAll();
             }

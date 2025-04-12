@@ -183,5 +183,15 @@ namespace Services.Optimization.PoolingSystem
         }
     }
 
-    public interface IPooler { }
+    public interface IPooler 
+    {
+        /// <summary>
+        /// Use this to disabled all pooling that create by this group and that destroy them all.
+        /// </summary>
+        public void Dispose();
+        /// <summary>
+        /// Disabed all pooling.
+        /// </summary>
+        public void DisabledAll();
+    }
 }
