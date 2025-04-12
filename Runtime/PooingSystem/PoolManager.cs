@@ -99,6 +99,10 @@ namespace Services.Optimization.PoolingSystem
             {
                 system.Dispose();
             }
+
+            poolersDict.Clear();
+
+            PoolSetting.Instance.ClearContainer();
         }
 
         /// <summary>
