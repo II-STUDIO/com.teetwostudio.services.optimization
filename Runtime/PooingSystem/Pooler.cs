@@ -8,34 +8,38 @@ namespace Services.Optimization.PoolingSystem
     /// </summary>
     public class Pooler<TPoolingObject> : IPooler where TPoolingObject : PoolingObject
     {
-        private Dictionary<int, TPoolingObject> container = new(PoolSetting.Instance.MaxCapacity);
-        private Queue<int> valiableId = new(PoolSetting.Instance.MaxCapacity);
+        // Use readonly fields for container sizes if possible
+        private readonly Dictionary<int, TPoolingObject> container;
+        private readonly Queue<int> availableIds;
 
         private TPoolingObject prefab;
-        private Transform originalPerent;
-
-        public int ObjectCount { get => container.Count; }
-
-        public Transform root { get => originalPerent; }
-
+        private Transform originalParent;
         private Vector3 prefabScale;
 
+        public int ObjectCount => container.Count;
+        public Transform root => originalParent;
 
-        /// <summary>
-        /// This method use for installation pooling system and init all pooling objects of target prefab width parent.
-        /// </summary>
-        public void Initialize(TPoolingObject prefab, Transform parent)
+        public Pooler()
         {
-            this.prefab = prefab;
-            prefabScale = prefab.transform.localScale;
+            int maxCapacity = PoolSetting.Instance?.MaxCapacity ?? 100; // fallback default
 
-            originalPerent = parent;
+            container = new Dictionary<int, TPoolingObject>(maxCapacity);
+            availableIds = new Queue<int>(maxCapacity);
         }
 
-        /// <summary>
-        /// This metod use for add pooling count of original prefab.
-        /// </summary>
-        /// <param name="count"></param>
+        public void Initialize(TPoolingObject prefab, Transform parent)
+        {
+            if (prefab == null)
+            {
+                Debug.LogError("Pooler Initialize failed: prefab is null");
+                return;
+            }
+
+            this.prefab = prefab;
+            prefabScale = prefab.transform.localScale;
+            originalParent = parent;
+        }
+
         public void AddCount(int count)
         {
             for (int i = 0; i < count; i++)
@@ -44,124 +48,85 @@ namespace Services.Optimization.PoolingSystem
 
         private void AddNew()
         {
-            if(prefab == null)
+            if (prefab == null)
             {
-                Debug.LogErrorFormat("Prefab of Pooling profile can't be null or emty");
+                Debug.LogError("Pooler AddNew failed: prefab is null");
                 return;
             }
 
-            var objectPool = UnityEngine.Object.Instantiate(prefab, originalPerent);
-            if (!objectPool)
+            var obj = Object.Instantiate(prefab, originalParent);
+            if (obj == null)
             {
-                Debug.LogError("'ObjectPooing' can't create prefab <" + prefab.name + ">");
+                Debug.LogError($"Pooler AddNew failed: instantiate prefab {prefab.name} returned null");
                 return;
             }
 
-            objectPool.Initialize();
-            objectPool.OnDisabled_Evt += OnDisabledPool;
-            objectPool.gameObject.SetActive(false);
-            objectPool.SetOriginalPerent(originalPerent);
+            obj.Initialize();
+            obj.OnDisabled_Evt += OnDisabledPool;
+            obj.gameObject.SetActive(false);
+            obj.SetOriginalPerent(originalParent);
 
-            container.Add(objectPool.GameObjectId, objectPool);
-            valiableId.Enqueue(objectPool.GameObjectId);
+            container.Add(obj.GameObjectId, obj);
+            availableIds.Enqueue(obj.GameObjectId);
         }
 
-        /// <summary>
-        /// Call for pool object prefab out width position and rotaion and enabled.
-        /// </summary>
-        /// <param name="poolPosition"></param>
-        /// <param name="poolRotation"></param>
-        /// <returns>Lasted object prefab index</returns>
-        public TPoolingObject Pool(Vector3 poolPosition, Quaternion poolRotation)
-        {
-            var objectPool = GetValidableObject();
+        // Pool methods: minimal duplication by common method for setup
+        public TPoolingObject Pool(Vector3 position, Quaternion rotation)
+            => PoolInternal(position, rotation, originalParent);
 
-            objectPool.transformCache.SetPositionAndRotation(poolPosition, poolRotation);
-            objectPool.transformCache.localScale = prefabScale;
-            objectPool.EnabledPool();
+        public TPoolingObject Pool(Vector3 position, Quaternion rotation, Transform parent)
+            => PoolInternal(position, rotation, parent);
 
-            return objectPool;
-        }
-
-        public TPoolingObject Pool(Vector3 poolPosition, Quaternion poolRotation, Transform parent)
-        {
-            var objectPool = GetValidableObject();
-
-            objectPool.transformCache.SetPositionAndRotation(poolPosition, poolRotation);
-            objectPool.transformCache.localScale = prefabScale;
-            objectPool.transformCache.SetParent(parent);
-            objectPool.EnabledPool();
-
-            return objectPool;
-        }
-
-        /// <summary>
-        /// Call for pool object prefab out width set parent and enabled.
-        /// </summary>
-        /// <param name="parent"></param>
-        /// <returns>Lasted object prefab index</returns>
         public TPoolingObject Pool(Transform parent)
-        {
-            var objectPool = GetValidableObject();
+            => PoolInternal(Vector3.zero, Quaternion.identity, parent);
 
-            objectPool.transformCache.SetParent(parent);
-            objectPool.transformCache.localPosition = Vector3.zero;
-            objectPool.transformCache.localScale = prefabScale;
-            objectPool.EnabledPool();
-
-            return objectPool;
-        }
-
-        /// <summary>
-        /// Call for pool object prefab and enabled.
-        /// </summary>
-        /// <returns>Lasted object prefab index</returns>
         public TPoolingObject Pool()
+            => PoolInternal(Vector3.zero, Quaternion.identity, originalParent);
+
+        private TPoolingObject PoolInternal(Vector3 position, Quaternion rotation, Transform parent)
         {
-            var objectPool = GetValidableObject();
+            var obj = GetAvailableObject();
 
-            objectPool.transformCache.localPosition = Vector3.zero;
-            objectPool.transformCache.localScale = prefabScale;
-            objectPool.EnabledPool();
+            var t = obj.transformCache;
+            t.SetPositionAndRotation(position, rotation);
+            t.localScale = prefabScale;
+            t.SetParent(parent, false);
+            obj.EnabledPool();
 
-            return objectPool;
+            return obj;
         }
 
-        /// <summary>
-        /// Calculate validabe prefab to pool.
-        /// </summary>
-        /// <returns></returns>
-        private TPoolingObject GetValidableObject()
+        private TPoolingObject GetAvailableObject()
         {
-            if (valiableId.Count == 0)
+            if (availableIds.Count == 0)
                 AddNew();
 
-            return container[valiableId.Dequeue()];
+            int id = availableIds.Dequeue();
+            if (!container.TryGetValue(id, out var obj))
+            {
+                Debug.LogError($"Pooler GetAvailableObject failed: object id {id} missing from container");
+                return null;
+            }
+
+            return obj;
         }
 
-        /// <summary>
-        /// Use this to disabled all pooling that create by this group and that destroy them all.
-        /// </summary>
         public void Dispose()
         {
             DisabledAll();
 
+            // Avoid enumerator allocations by using foreach with cached Values collection
             var values = container.Values;
-            foreach(var obj in values)
+            foreach (var obj in values)
             {
                 obj.OnDisposeOrDestroy();
-
                 Object.Destroy(obj.gameObject);
             }
 
             container.Clear();
-
-            valiableId.Clear();
+            availableIds.Clear();
         }
 
-        /// <summary>
-        /// Disabed all pooling.
-        /// </summary>
         public void DisabledAll()
         {
             var values = container.Values;
@@ -173,25 +138,20 @@ namespace Services.Optimization.PoolingSystem
 
         private void OnDisabledPool(int objectId)
         {
+            // Use TryGetValue to avoid double dictionary lookup
             if (!container.ContainsKey(objectId))
             {
-                Debug.LogError($"Object id <{objectId}> not exited in pooler");
+                Debug.LogError($"Pooler OnDisabledPool: Object id {objectId} not found in container");
                 return;
             }
 
-            valiableId.Enqueue(objectId);
+            availableIds.Enqueue(objectId);
         }
     }
 
-    public interface IPooler 
+    public interface IPooler
     {
-        /// <summary>
-        /// Use this to disabled all pooling that create by this group and that destroy them all.
-        /// </summary>
-        public void Dispose();
-        /// <summary>
-        /// Disabed all pooling.
-        /// </summary>
-        public void DisabledAll();
+        void Dispose();
+        void DisabledAll();
     }
 }

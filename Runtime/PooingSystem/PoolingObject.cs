@@ -4,45 +4,46 @@ using UnityEngine;
 namespace Services.Optimization.PoolingSystem
 {
     /// <summary>
-    /// Pooling object controllable of prefab for poolable.
+    /// Pooling object controllable prefab instance for pooling.
     /// </summary>
     public class PoolingObject : LoopUpdateMonoBehaviour
     {
-        private Transform m_originalPerent;
+        private Transform _originalParent;
 
-        [SerializeField] private float lifeTime = 0f;
-        [Space]
+        [SerializeField]
+        private float lifeTime = 0f;
 
-        [HideInInspector] public float m_runtime_lifeTime = 0f;
+        [HideInInspector]
+        public float m_runtime_lifeTime = 0f;
 
         public Transform transformCache { get; private set; }
         public GameObject gameObjectCache { get; private set; }
 
-        /// <summary>
-        /// Id of game object.
-        /// </summary>
+        /// <summary>Unique instance id for this game object.</summary>
         public int GameObjectId { get; private set; }
 
-        public bool IsActive { get; private set; } = false;
+        private bool _isActive = false;
+        public bool IsActive
+        {
+            get => _isActive;
+            private set => _isActive = value;
+        }
 
-        public void SetOriginalPerent(Transform targetPerent) => m_originalPerent = targetPerent;
-
-        public event Action<int> OnDisabled_Evt, OnEnabled_Evt;
+        public void SetOriginalPerent(Transform targetParent) => _originalParent = targetParent;
 
         /// <summary>
-        /// This invoke one time when this object is init on 'PoolingSystem'.
+        /// Called once when object is initialized by pooling system.
         /// </summary>
-        public virtual void Initialize() 
+        public virtual void Initialize()
         {
             GameObjectId = gameObject.GetInstanceID();
-
             gameObjectCache = gameObject;
             transformCache = gameObjectCache.transform;
         }
 
-        private void ComputeAndUdpate(float deltaTime)
+        private void ComputeAndUpdate(float deltaTime)
         {
-            if (m_runtime_lifeTime == 0f)
+            if (m_runtime_lifeTime <= 0f)
                 return;
 
             m_runtime_lifeTime -= deltaTime;
@@ -54,71 +55,74 @@ namespace Services.Optimization.PoolingSystem
         }
 
         /// <summary>
-        /// Enabled object *** not use this pool will automatic call this when it take form pool.
+        /// Enables this pooled object and resets its life timer.
         /// </summary>
         public void EnabledPool()
         {
-            gameObjectCache.SetActive(true);
+            if (_isActive)
+                return;
 
+            gameObjectCache.SetActive(true);
             IsActive = true;
 
             m_runtime_lifeTime = lifeTime;
 
             OnEnabled_Evt?.Invoke(GameObjectId);
-
             OnEnabledPool();
         }
 
         /// <summary>
-        /// Disabled object and return to pool.
+        /// Disables this pooled object and returns it to pool.
         /// </summary>
         public void DisabledPool()
         {
-            if (!IsActive) 
+            if (!IsActive)
                 return;
 
             gameObjectCache.SetActive(false);
-
             IsActive = false;
 
             m_runtime_lifeTime = 0f;
-            transformCache.localPosition = Vector3.zero;
 
-            if (transformCache.parent != m_originalPerent)
-                transformCache.SetParent(m_originalPerent);
+            // Reset position only if not zero to reduce transform overhead
+            if (transformCache.localPosition != Vector3.zero)
+                transformCache.localPosition = Vector3.zero;
+
+            if (transformCache.parent != _originalParent)
+                transformCache.SetParent(_originalParent, worldPositionStays: false);
 
             OnDisabled_Evt?.Invoke(GameObjectId);
-
             OnDisabledPool();
         }
 
         /// <summary>
-        /// This fuction is invoke when this object has pooled.
+        /// Called when this object is enabled from the pool.
+        /// Override to add custom logic.
         /// </summary>
-        protected virtual void OnEnabledPool()
-        {
-
-        }
+        protected virtual void OnEnabledPool() { }
 
         /// <summary>
-        /// This fuction is invoke when this object has disabled.
+        /// Called when this object is disabled and returned to the pool.
+        /// Override to add custom logic.
         /// </summary>
-        protected virtual void OnDisabledPool()
-        {
-
-        }
+        protected virtual void OnDisabledPool() { }
 
         /// <summary>
-        /// This function is invoke before destroy this object.
+        /// Called before this object is destroyed or disposed.
+        /// Override to cleanup.
         /// </summary>
-        public virtual void OnDisposeOrDestroy()
-        {
+        public virtual void OnDisposeOrDestroy() { }
 
-        }
-
+        /// <summary>
+        /// Update loop callback.
+        /// </summary>
         public override void LoopUpdateEvent(float deltaTime)
         {
-            ComputeAndUdpate(deltaTime);
+            ComputeAndUpdate(deltaTime);
         }
+
+        // Events for external listeners
+        public event Action<int> OnDisabled_Evt;
+        public event Action<int> OnEnabled_Evt;
     }
 }

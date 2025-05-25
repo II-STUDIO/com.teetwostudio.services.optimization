@@ -4,112 +4,97 @@ using UnityEngine;
 namespace Services.Optimization.PoolingSystem
 {
     /// <summary>
-    /// This class is supported to call one way of global pooler width eazy method.
+    /// This class supports calling one way of global pooler with easy methods.
     /// </summary>
     public static class PoolManager
     {
-        /// <summary>
-        /// Pooler container.
-        /// </summary>
-        private static Dictionary<PoolingObject, IPooler> poolersDict = new Dictionary<PoolingObject, IPooler>(300);
+        // Cache PoolSetting.Instance for reuse (optional)
+        private static readonly PoolSetting poolSetting = PoolSetting.Instance;
+
+        // Dictionary stores prefab as key, pooler as value
+        private static readonly Dictionary<PoolingObject, IPooler> poolersDict = new Dictionary<PoolingObject, IPooler>(300);
 
         /// <summary>
-        /// Call for find pooler of PoolingObject profile with matches id.
+        /// Gets pooler of PoolingObject profile matching the prefab.
         /// </summary>
-        /// <param name="prefab"></param>
-        /// <returns>Pooler of proifle object prefab of matches id prefab</returns>
         public static Pooler<TPoolingObject> GetPooler<TPoolingObject>(TPoolingObject prefab) where TPoolingObject : PoolingObject
         {
-            if (poolersDict.ContainsKey(prefab))
-                return poolersDict[prefab] as Pooler<TPoolingObject>;
-
-            Debug.LogErrorFormat($"Object Pooler of the profile id <{prefab.name}> not find or created");
-
-            return null;
-        }
-
-        ///
-        /// Summary:
-        ///     Use to create pooler of pool profile or get exited.
-        /// <summary>
-        /// Call for create pooler of PoolingObject profile.
-        /// </summary>
-        /// <returns>PoolingSystem Componet of created target prefab</returns>
-        public static Pooler<TPoolingObject> CreatePooler<TPoolingObject>(TPoolingObject prefab) where TPoolingObject : PoolingObject
-        {
-            Pooler<TPoolingObject> pooler = GetExisted(prefab);
-
-            if (pooler != null) 
-                return pooler;
-
-            pooler = Create(prefab);
-
-            poolersDict.Add(prefab, pooler);
-
-            return pooler;
-        }
-
-        /// <summary>
-        /// Try create pooler of pooling object prefab if is existed this method will add amound staked.
-        /// </summary>
-        /// <param name="prefab"></param>
-        /// <returns>PoolingSystem Componet of created target prefab</returns>
-        private static Pooler<TPoolingObject> GetExisted<TPoolingObject>(TPoolingObject prefab) where TPoolingObject : PoolingObject
-        {
-            if (poolersDict.TryGetValue(prefab, out var poolerObj))
+            if (prefab == null)
             {
-                Pooler<TPoolingObject> pooler = poolerObj as Pooler<TPoolingObject>;
-
-                return pooler;
+                Debug.LogError("PoolManager GetPooler failed: prefab is null");
+                return null;
             }
 
+            if (poolersDict.TryGetValue(prefab, out var pooler))
+                return pooler as Pooler<TPoolingObject>;
+
+            Debug.LogError($"PoolManager: Pooler for prefab '{prefab.name}' not found.");
             return null;
         }
 
         /// <summary>
-        /// Use to create pooler.
+        /// Creates or returns existing pooler of PoolingObject profile.
         /// </summary>
-        /// <param name="prefab"></param>
-        /// <returns></returns>
+        public static Pooler<TPoolingObject> CreatePooler<TPoolingObject>(TPoolingObject prefab) where TPoolingObject : PoolingObject
+        {
+            if (prefab == null)
+            {
+                Debug.LogError("PoolManager CreatePooler failed: prefab is null");
+                return null;
+            }
+
+            if (poolersDict.TryGetValue(prefab, out var existingPooler))
+                return existingPooler as Pooler<TPoolingObject>;
+
+            var newPooler = Create(prefab);
+            poolersDict.Add(prefab, newPooler);
+            return newPooler;
+        }
+
+        /// <summary>
+        /// Internal create pooler helper.
+        /// </summary>
         private static Pooler<TPoolingObject> Create<TPoolingObject>(TPoolingObject prefab) where TPoolingObject : PoolingObject
         {
-            string name = $"Pooling System name : <{prefab.name}>";
+            string name = $"Pooling System : {prefab.name}";
 
             var systemObj = new GameObject(name);
 
-            var systemContainer = PoolSetting.Instance.Container;
-            if (systemContainer)
-                systemObj.transform.SetParent(systemContainer);
+            var container = poolSetting?.Container;
+            if (container != null)
+                systemObj.transform.SetParent(container, false);
 
-            Pooler<TPoolingObject> pooler = new Pooler<TPoolingObject>();
-
+            var pooler = new Pooler<TPoolingObject>();
             pooler.Initialize(prefab, systemObj.transform);
 
             return pooler;
         }
 
         /// <summary>
-        /// Dispose all pooeler.
+        /// Dispose all poolers and clear dictionary.
         /// </summary>
         public static void DisposeAll()
         {
-            var values = poolersDict.Values;
+            if (poolersDict.Count == 0) return;
 
-            foreach (IPooler system in values)
+            foreach (var pooler in poolersDict.Values)
             {
-                system.Dispose();
+                pooler.Dispose();
             }
+
+            poolersDict.Clear();
         }
 
         /// <summary>
-        /// Disabled all pooling object.
+        /// Disable all pooled objects from all poolers.
         /// </summary>
-        public static void DisabledAll()
+        public static void DisableAll()
         {
-            var values = poolersDict.Values;
-            foreach (IPooler system in values)
+            if (poolersDict.Count == 0) return;
+
+            foreach (var pooler in poolersDict.Values)
             {
-                system.DisabledAll();
+                pooler.DisabledAll();
             }
         }
     }
