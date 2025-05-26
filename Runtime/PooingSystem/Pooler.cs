@@ -119,6 +119,9 @@ namespace Services.Optimization.PoolingSystem
             var values = container.Values;
             foreach (var obj in values)
             {
+                if (!obj)
+                    continue;
+
                 obj.OnDisposeOrDestroy();
                 Object.Destroy(obj.gameObject);
             }
@@ -132,6 +135,9 @@ namespace Services.Optimization.PoolingSystem
             var values = container.Values;
             foreach (var obj in values)
             {
+                if (!obj)
+                    continue;
+
                 obj.DisabledPool();
             }
         }

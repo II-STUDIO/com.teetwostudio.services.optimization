@@ -79,17 +79,22 @@ namespace Services.Optimization.PoolingSystem
             if (!IsActive)
                 return;
 
-            gameObjectCache.SetActive(false);
+            if (gameObjectCache)
+                gameObjectCache.SetActive(false);
+
             IsActive = false;
 
             m_runtime_lifeTime = 0f;
 
             // Reset position only if not zero to reduce transform overhead
-            if (transformCache.localPosition != Vector3.zero)
-                transformCache.localPosition = Vector3.zero;
+            if (transformCache)
+            {
+                if (transformCache.localPosition != Vector3.zero)
+                    transformCache.localPosition = Vector3.zero;
 
-            if (transformCache.parent != _originalParent)
-                transformCache.SetParent(_originalParent, worldPositionStays: false);
+                if (transformCache.parent != _originalParent)
+                    transformCache.SetParent(_originalParent, worldPositionStays: false);
+            }
 
             OnDisabled_Evt?.Invoke(GameObjectId);
             OnDisabledPool();

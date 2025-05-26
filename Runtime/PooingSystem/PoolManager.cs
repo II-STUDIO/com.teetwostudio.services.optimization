@@ -79,6 +79,8 @@ namespace Services.Optimization.PoolingSystem
 
             foreach (var pooler in poolersDict.Values)
             {
+                if (pooler == null)
+                    continue;
                 pooler.Dispose();
             }
 
@@ -94,6 +96,8 @@ namespace Services.Optimization.PoolingSystem
 
             foreach (var pooler in poolersDict.Values)
             {
+                if (pooler == null)
+                    continue;
                 pooler.DisabledAll();
             }
         }

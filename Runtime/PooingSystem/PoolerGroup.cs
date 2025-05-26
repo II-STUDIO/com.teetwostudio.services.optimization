@@ -49,10 +49,13 @@ namespace Services.Optimization.PoolingSystem
         /// </summary>
         public void DisabledAll()
         {
-            var values = containers.Values;
-            foreach (var pooler in values)
+            var valeus = containers.Values;
+            foreach (var kv in valeus)
             {
-                pooler.DisabledAll();
+                if(kv == null)
+                    continue;
+
+                kv.DisabledAll();
             }
         }
 
@@ -61,10 +64,13 @@ namespace Services.Optimization.PoolingSystem
         /// </summary>
         public void Dispose()
         {
-            var values = containers.Values;
-            foreach(var pooler in values)
+            var valeus = containers.Values;
+            foreach (var kv in valeus)
             {
-                pooler.Dispose();
+                if (kv == null)
+                    continue;
+
+                kv.Dispose();
             }
         }
     }
